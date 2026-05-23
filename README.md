@@ -1,0 +1,1 @@
+# MindClash - A real-time debate platform
