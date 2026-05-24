@@ -1,4 +1,4 @@
-# MindClash 🧠⚔️
+# MindClash 
 
 MindClash is an AI-powered real-time debate platform that enables users to participate in structured 1v1, 2v2, and 3v3 debates with intelligent moderation, live communication, and detailed AI-generated evaluations.  
 
@@ -8,31 +8,31 @@ The platform combines real-time multiplayer interaction with AI-driven analysis 
 
 ## 🚀 Features
 
-### 🎭 Real-Time Debate System
+### Real-Time Debate System
 - Supports **1v1, 2v2, and 3v3** debate formats
 - Turn-based debate flow with fixed team rotation
 - Anonymous player aliases for unbiased discussions
 - Live communication using Socket.io
 
-### 🤖 AI-Powered Debate Evaluation
+### AI-Powered Debate Evaluation
 - Integrated with **OpenAI GPT-4o-mini**
 - AI-generated winner selection and verdict explanation
 - Debate transcript analysis after all rounds complete
 - Smart fallback heuristic scoring when AI is unavailable
 
-### 📊 Rich AI Scorecard
+### Rich AI Scorecard
 - AI Judge verdict with reasoning
 - Fact-checking of debate claims
 - PRO vs CON strengths & weaknesses analysis
 - Debate highlights and standout moments
 - Moderation and toxicity flagging
 
-### 🛡️ Reliability & Moderation
+### Reliability & Moderation
 - Reporting system for toxic behavior or broken debates
 - Smart fallback scoring system
 - Secure CORS and Socket handling for production deployment
 
-### ⚡ Performance Optimizations
+### Performance Optimizations
 - Batched AI evaluation to reduce token usage
 - Optimized deployment pipeline
 - SPA routing support for React Router
