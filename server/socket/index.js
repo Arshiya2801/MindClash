@@ -1,93 +1,81 @@
 import User from '../models/User.js';
 import Debate from '../models/Debate.js';
 import Bet from '../models/Bet.js';
-import Message from '../models/Message.js';
 import jwt from 'jsonwebtoken';
-import geminiService from '../services/geminiService.js';
+import openaiService from '../services/openaiService.js';
 
-// Store active matchmaking queue and debates
-const matchmakingQueue = new Map();
-const activeDebates = new Map();
-const userSockets = new Map();
+// ─── In-memory state ────────────────────────────────────────────────────────
+const matchmakingQueue = new Map(); // queueKey → [entry]
+const activeDebates    = new Map(); // debateId → debate doc
+const userSockets      = new Map(); // userId   → socketId
 
-// Debate configuration
-const MESSAGES_PER_SIDE_TO_END = 5; // End debate after 5 messages from each side
+// How many messages each side must submit before the debate ends
+const MESSAGES_PER_SIDE = 5;
 
-/**
- * Authenticate socket connection
- */
+// ─── Socket auth middleware ──────────────────────────────────────────────────
 const authenticateSocket = async (socket, next) => {
     try {
         const token = socket.handshake.auth.token || socket.handshake.query.token;
-
-        if (!token) {
-            return next(new Error('Authentication required'));
-        }
+        if (!token) return next(new Error('Authentication required'));
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id).select('-password');
-
-        if (!user) {
-            return next(new Error('User not found'));
-        }
+        const user    = await User.findById(decoded.id).select('-password');
+        if (!user) return next(new Error('User not found'));
 
         socket.user = user;
         next();
-    } catch (error) {
+    } catch {
         next(new Error('Invalid token'));
     }
 };
 
-/**
- * Initialize Socket.io handlers
- */
+// ─── Main initializer ────────────────────────────────────────────────────────
 export const initializeSocket = (io) => {
-    // Apply authentication middleware
     io.use(authenticateSocket);
 
     io.on('connection', (socket) => {
-        console.log(`🔌 User connected: ${socket.user.username}`);
-
-        // Track user socket
+        console.log(`🔌 Connected: ${socket.user.username}`);
         userSockets.set(socket.user._id.toString(), socket.id);
-
-        // Update user online status
         User.findByIdAndUpdate(socket.user._id, { isOnline: true }).exec();
 
-        // ==================== MATCHMAKING ====================
+        // ─── MATCHMAKING ────────────────────────────────────────────────────
 
         socket.on('join_queue', async (data) => {
             try {
                 const { type = '1v1', category, isAnonymous = false } = data;
-                console.log(`🎯 User ${socket.user.username} joining queue:`, { type, category, isAnonymous });
 
-                const queueEntry = {
-                    socketId: socket.id,
-                    userId: socket.user._id.toString(),
-                    username: socket.user.username,
-                    tier: socket.user.tier,
-                    reputation: socket.user.reputation,
+                // Generate alias for anonymous users (local, no AI call)
+                const alias = isAnonymous
+                    ? await openaiService.generateAlias()
+                    : null;
+
+                const entry = {
+                    socketId:  socket.id,
+                    userId:    socket.user._id.toString(),
+                    username:  socket.user.username,
+                    tier:      socket.user.tier,
+                    reputation:socket.user.reputation,
                     isAnonymous,
+                    alias,
                     category,
                     type,
-                    joinedAt: Date.now(),
+                    joinedAt:  Date.now(),
                 };
 
                 const queueKey = `${type}-${category || 'any'}`;
-                if (!matchmakingQueue.has(queueKey)) {
-                    matchmakingQueue.set(queueKey, []);
-                }
-                matchmakingQueue.get(queueKey).push(queueEntry);
+                if (!matchmakingQueue.has(queueKey)) matchmakingQueue.set(queueKey, []);
+                matchmakingQueue.get(queueKey).push(entry);
 
                 socket.emit('queue_joined', {
                     position: matchmakingQueue.get(queueKey).length,
                     type,
                     category,
+                    alias,
                 });
 
                 await tryMatchmaking(io, queueKey, type);
             } catch (error) {
-                console.error('Join queue error:', error);
+                console.error('join_queue error:', error);
                 socket.emit('error', { message: 'Failed to join queue' });
             }
         });
@@ -95,36 +83,31 @@ export const initializeSocket = (io) => {
         socket.on('leave_queue', (data) => {
             const { type = '1v1', category } = data;
             const queueKey = `${type}-${category || 'any'}`;
-
-            if (matchmakingQueue.has(queueKey)) {
-                const queue = matchmakingQueue.get(queueKey);
-                const index = queue.findIndex(e => e.socketId === socket.id);
-                if (index > -1) {
-                    queue.splice(index, 1);
-                }
+            const queue = matchmakingQueue.get(queueKey);
+            if (queue) {
+                const i = queue.findIndex(e => e.socketId === socket.id);
+                if (i > -1) queue.splice(i, 1);
             }
-
             socket.emit('queue_left');
         });
 
-        // ==================== DEBATE ROOM ====================
+        // ─── DEBATE ROOM ─────────────────────────────────────────────────────
 
         socket.on('join_debate', async (data) => {
             try {
                 const { debateId } = data;
                 const debate = await Debate.findById(debateId)
-                    .populate('proTeam.user', 'username avatar')
-                    .populate('conTeam.user', 'username avatar');
+                    .populate('proTeam.user', 'username avatar tier')
+                    .populate('conTeam.user', 'username avatar tier');
 
-                if (!debate) {
-                    return socket.emit('error', { message: 'Debate not found' });
-                }
+                if (!debate) return socket.emit('error', { message: 'Debate not found' });
 
                 socket.join(`debate:${debateId}`);
                 socket.debateId = debateId;
 
-                const isProTeam = debate.proTeam.some(p => p.user._id.toString() === socket.user._id.toString());
-                const isConTeam = debate.conTeam.some(p => p.user._id.toString() === socket.user._id.toString());
+                const uid = socket.user._id.toString();
+                const isProTeam = debate.proTeam.some(p => p.user._id.toString() === uid);
+                const isConTeam = debate.conTeam.some(p => p.user._id.toString() === uid);
                 const isParticipant = isProTeam || isConTeam;
 
                 socket.emit('debate_joined', {
@@ -137,548 +120,553 @@ export const initializeSocket = (io) => {
                         $inc: { spectatorCount: 1 },
                         $push: { spectators: { user: socket.user._id, joinedAt: new Date() } },
                     });
-
                     io.to(`debate:${debateId}`).emit('spectator_joined', {
                         spectatorCount: debate.spectatorCount + 1,
                     });
                 }
             } catch (error) {
-                console.error('Join debate error:', error);
+                console.error('join_debate error:', error);
                 socket.emit('error', { message: 'Failed to join debate' });
             }
         });
 
-        /**
-         * Submit argument - NO real-time scoring, just save and broadcast
-         */
+        // ─── SUBMIT ARGUMENT ─────────────────────────────────────────────────
         socket.on('submit_argument', async (data) => {
             try {
                 const { debateId, content } = data;
-
                 const debate = await Debate.findById(debateId);
 
-                if (!debate) {
-                    return socket.emit('error', { message: 'Debate not found' });
-                }
+                if (!debate) return socket.emit('error', { message: 'Debate not found' });
+                if (debate.status === 'finished') return socket.emit('error', { message: 'Debate already ended' });
+                if (debate.status !== 'active') return socket.emit('error', { message: 'Debate not active' });
 
-                if (debate.status === 'finished') {
-                    return socket.emit('error', { message: 'Debate has already ended' });
-                }
+                const uid = socket.user._id.toString();
+                const isProTeam = debate.proTeam.some(p => p.user.toString() === uid);
+                const isConTeam = debate.conTeam.some(p => p.user.toString() === uid);
 
-                if (debate.status !== 'active') {
-                    return socket.emit('error', { message: 'Debate not active' });
-                }
-
-                const isProTeam = debate.proTeam.some(p => p.user.toString() === socket.user._id.toString());
-                const isConTeam = debate.conTeam.some(p => p.user.toString() === socket.user._id.toString());
-
-                if (!isProTeam && !isConTeam) {
+                if (!isProTeam && !isConTeam)
                     return socket.emit('error', { message: 'You are not a participant' });
-                }
 
                 const side = isProTeam ? 'pro' : 'con';
 
-                if (debate.currentSide !== side) {
+                // ── Turn enforcement ──────────────────────────────────────────
+                // For team debates: track whose turn among team members
+                if (debate.currentSide !== side)
                     return socket.emit('error', { message: 'Not your turn' });
+
+                // For multi-player teams: check if this specific player already spoke in the CURRENT round
+                const currentRoundIndex = Math.min(debate.currentRound, debate.rounds.length - 1);
+                const currentRound = debate.rounds[currentRoundIndex];
+                if (!currentRound) return socket.emit('error', { message: 'Round error' });
+
+                const team = side === 'pro' ? debate.proTeam : debate.conTeam;
+                if (team.length > 1) {
+                    // In team debates: within the same round, each individual player
+                    // can only speak once. If they already spoke, reject.
+                    const alreadySpoke = currentRound.messages.some(
+                        m => m.sender.toString() === uid
+                    );
+                    if (alreadySpoke)
+                        return socket.emit('error', { message: 'You already spoke this round' });
                 }
 
-                // Count existing messages
-                let proMessageCount = 0;
-                let conMessageCount = 0;
+                // ── Content validation ────────────────────────────────────────
+                const trimmed = content.trim();
+                if (trimmed.length < 5)
+                    return socket.emit('argument_rejected', { reason: 'Argument too short (min 5 chars).' });
+                if (trimmed.length > 2000)
+                    return socket.emit('argument_rejected', { reason: 'Argument too long (max 2000 chars).' });
 
+                // ── Save message ──────────────────────────────────────────────
+                const message = {
+                    sender:    socket.user._id,
+                    content:   trimmed,
+                    timestamp: new Date(),
+                };
+                currentRound.messages.push(message);
+
+                // ── Count per-side totals across ALL rounds ───────────────────
+                let proTotal = 0, conTotal = 0;
                 for (const round of debate.rounds) {
                     for (const msg of round.messages) {
                         const msgSide = debate.proTeam.some(p => p.user.toString() === msg.sender.toString()) ? 'pro' : 'con';
-                        if (msgSide === 'pro') proMessageCount++;
-                        else conMessageCount++;
+                        if (msgSide === 'pro') proTotal++;
+                        else conTotal++;
                     }
                 }
 
-                console.log(`📊 Message counts - PRO: ${proMessageCount}, CON: ${conMessageCount}`);
-
-                // Simple content check (no AI moderation to save API calls)
-                if (content.length < 5) {
-                    return socket.emit('argument_rejected', {
-                        reason: 'Argument too short. Please write at least 5 characters.',
-                    });
-                }
-
-                if (content.length > 2000) {
-                    return socket.emit('argument_rejected', {
-                        reason: 'Argument too long. Maximum 2000 characters.',
-                    });
-                }
-
-                // Create message - NO AI scoring
-                const message = {
-                    sender: socket.user._id,
-                    content,
-                    timestamp: new Date(),
-                };
-
-                // Add to current round
-                const currentRoundIndex = Math.min(debate.currentRound, debate.rounds.length - 1);
-                const currentRound = debate.rounds[currentRoundIndex];
-
-                if (!currentRound) {
-                    return socket.emit('error', { message: 'Debate round error' });
-                }
-
-                currentRound.messages.push(message);
-
-                // Update message count
-                if (side === 'pro') proMessageCount++;
-                else conMessageCount++;
-
-                // Switch turns
+                // ── Switch turns ──────────────────────────────────────────────
                 debate.currentSide = side === 'pro' ? 'con' : 'pro';
-                debate.turnEndsAt = new Date(Date.now() + 120000);
-
+                debate.turnEndsAt  = new Date(Date.now() + 120000); // 2 min
                 await debate.save();
 
-                // Broadcast argument (no scores)
-                io.to(`debate:${debateId}`).emit('argument_submitted', {
+                // Broadcast the argument (no per-message AI — saved for batch)
+                const msgPayload = {
                     message: {
-                        ...message,
+                        _id:        currentRound.messages[currentRound.messages.length - 1]._id,
+                        sender:     socket.user._id,
                         senderName: socket.user.username,
+                        content:    trimmed,
+                        timestamp:  message.timestamp,
                     },
                     side,
-                    nextTurn: debate.currentSide,
+                    nextTurn:   debate.currentSide,
                     turnEndsAt: debate.turnEndsAt,
-                    messageCount: { pro: proMessageCount, con: conMessageCount },
-                });
+                    messageCount: { pro: proTotal, con: conTotal },
+                    total: MESSAGES_PER_SIDE,
+                };
+                io.to(`debate:${debateId}`).emit('argument_submitted', msgPayload);
 
-                console.log(`📝 Argument submitted. PRO: ${proMessageCount}/${MESSAGES_PER_SIDE_TO_END}, CON: ${conMessageCount}/${MESSAGES_PER_SIDE_TO_END}`);
+                console.log(`📝 [${side.toUpperCase()}] ${proTotal}/${MESSAGES_PER_SIDE} | CON ${conTotal}/${MESSAGES_PER_SIDE}`);
 
-                // Check if debate should end
-                if (proMessageCount >= MESSAGES_PER_SIDE_TO_END && conMessageCount >= MESSAGES_PER_SIDE_TO_END) {
-                    console.log('🏁 Both sides submitted 5 messages. Ending debate and ranking...');
-                    await finishDebate(io, debate);
+                // ── Check if debate should end ────────────────────────────────
+                if (proTotal >= MESSAGES_PER_SIDE && conTotal >= MESSAGES_PER_SIDE) {
+                    console.log('🏁 Both sides done. Running batch AI analysis...');
+                    // Reload full debate so we have all messages
+                    const freshDebate = await Debate.findById(debateId);
+                    await finishDebate(io, freshDebate);
                 } else {
-                    // Advance round if both submitted in current round
-                    const roundProMsgs = currentRound.messages.filter(m =>
+                    // Advance round if both sides spoke in current round
+                    const roundProCount = currentRound.messages.filter(m =>
                         debate.proTeam.some(p => p.user.toString() === m.sender.toString())
                     ).length;
-                    const roundConMsgs = currentRound.messages.filter(m =>
+                    const roundConCount = currentRound.messages.filter(m =>
                         debate.conTeam.some(p => p.user.toString() === m.sender.toString())
                     ).length;
 
-                    if (roundProMsgs >= 1 && roundConMsgs >= 1 && debate.currentRound < debate.rounds.length - 1) {
+                    const perTeamSize = Math.max(debate.proTeam.length, 1);
+                    if (roundProCount >= perTeamSize && roundConCount >= perTeamSize
+                        && debate.currentRound < debate.rounds.length - 1) {
                         debate.currentRound += 1;
                         await debate.save();
-
                         io.to(`debate:${debateId}`).emit('round_changed', {
                             roundNumber: debate.currentRound + 1,
-                            roundType: debate.rounds[debate.currentRound]?.type || 'debate',
-                            duration: 120,
-                            side: debate.currentSide,
+                            roundType:   debate.rounds[debate.currentRound]?.type || 'debate',
+                            side:        debate.currentSide,
                         });
                     }
                 }
             } catch (error) {
-                console.error('Submit argument error:', error);
+                console.error('submit_argument error:', error);
                 socket.emit('error', { message: 'Failed to submit argument' });
             }
         });
 
-        // ==================== SPECTATOR FEATURES ====================
-
-        socket.on('spectator_chat', async (data) => {
+        // ─── SPECTATOR CHAT ──────────────────────────────────────────────────
+        socket.on('spectator_chat', (data) => {
             try {
-                const { debateId, message, username } = data;
+                const { debateId, message, isAnonymous } = data;
+                const senderName = isAnonymous ? 'Anonymous' : socket.user.username;
+                // Basic length check
+                if (!message || message.trim().length < 1) return;
                 io.to(`debate:${debateId}`).emit('spectator_message', {
-                    username: username || socket.user.username,
-                    message,
+                    username:  senderName,
+                    message:   message.trim().slice(0, 300),
                     timestamp: new Date(),
                 });
             } catch (error) {
-                console.error('Spectator chat error:', error);
+                console.error('spectator_chat error:', error);
             }
         });
 
-        socket.on('reaction', async (data) => {
+        // ─── REACTIONS ───────────────────────────────────────────────────────
+        socket.on('reaction', (data) => {
             try {
                 const { debateId, emoji } = data;
-                io.to(`debate:${debateId}`).emit('reaction', { emoji });
+                const allowed = ['🔥', '👏', '💯', '🤔', '😱', '💀'];
+                if (!allowed.includes(emoji)) return;
+                io.to(`debate:${debateId}`).emit('reaction', { emoji, username: socket.user.username });
             } catch (error) {
-                console.error('Reaction error:', error);
+                console.error('reaction error:', error);
             }
         });
 
+        // ─── BETTING ─────────────────────────────────────────────────────────
         socket.on('place_bet', async (data) => {
             try {
                 const { debateId, side, amount } = data;
 
-                if (!['pro', 'con'].includes(side)) {
-                    return socket.emit('bet_error', { message: 'Invalid prediction' });
-                }
+                if (!['pro', 'con'].includes(side))
+                    return socket.emit('bet_error', { message: 'Invalid side' });
 
-                if (amount < 10 || amount > 10000) {
-                    return socket.emit('bet_error', { message: 'Bet amount must be 10-10000 XP' });
-                }
+                const amt = parseInt(amount);
+                if (isNaN(amt) || amt < 10 || amt > 10000)
+                    return socket.emit('bet_error', { message: 'Bet amount must be 10–10,000 XP' });
 
                 const debate = await Debate.findById(debateId);
-                if (!debate || !debate.bettingOpen) {
+                if (!debate?.bettingOpen)
                     return socket.emit('bet_error', { message: 'Betting is closed' });
-                }
 
-                if (socket.user.xp < amount) {
+                // Reload user for fresh XP
+                const freshUser = await User.findById(socket.user._id);
+                if (freshUser.xp < amt)
                     return socket.emit('bet_error', { message: 'Insufficient XP' });
-                }
 
-                await User.findByIdAndUpdate(socket.user._id, { $inc: { xp: -amount } });
 
-                await Debate.findByIdAndUpdate(debateId, {
-                    $inc: {
-                        'bettingPool.total': amount,
-                        [`bettingPool.${side}`]: amount,
-                    },
+
+
+                await User.findByIdAndUpdate(socket.user._id, { $inc: { xp: -amt } });
+                const updatedDebate = await Debate.findByIdAndUpdate(debateId, {
+                    $inc: { 'bettingPool.total': amt, [`bettingPool.${side}`]: amt },
+                }, { new: true });
+
+                // Recalculate live odds
+                const odds = updatedDebate.calculateOdds();
+                await Debate.findByIdAndUpdate(debateId, { odds });
+
+                socket.emit('bet_placed', { side, amount: amt, newBalance: freshUser.xp - amt });
+                io.to(`debate:${debateId}`).emit('betting_update', {
+                    pool: updatedDebate.bettingPool,
+                    odds,
                 });
-
-                const updatedDebate = await Debate.findById(debateId);
-
-                socket.emit('bet_placed', { side, amount, newBalance: socket.user.xp - amount });
-                io.to(`debate:${debateId}`).emit('betting_update', { pool: updatedDebate.bettingPool });
             } catch (error) {
-                console.error('Place bet error:', error);
+                console.error('place_bet error:', error);
                 socket.emit('bet_error', { message: 'Failed to place bet' });
             }
         });
 
-        socket.on('leave_debate', async (data) => {
+        // ─── FORFEIT ─────────────────────────────────────────────────────────
+        socket.on('forfeit', async (data) => {
+            try {
+                const { debateId } = data;
+                const debate = await Debate.findById(debateId);
+                if (!debate || debate.status !== 'active') return;
+
+                const uid = socket.user._id.toString();
+                const isProTeam = debate.proTeam.some(p => p.user.toString() === uid);
+                const isConTeam = debate.conTeam.some(p => p.user.toString() === uid);
+                if (!isProTeam && !isConTeam) return;
+
+                const forfeitSide = isProTeam ? 'pro' : 'con';
+                const winnerSide  = forfeitSide === 'pro' ? 'con' : 'pro';
+
+                debate.status    = 'finished';
+                debate.endedAt   = new Date();
+                debate.bettingOpen = false;
+                debate.winner    = {
+                    side: winnerSide,
+                    team: winnerSide === 'pro' ? debate.proTeam.map(p => p.user) : debate.conTeam.map(p => p.user),
+                    score: 100,
+                    margin: 100,
+                };
+                debate.scores    = { pro: { total: forfeitSide === 'pro' ? 0 : 100 }, con: { total: forfeitSide === 'con' ? 0 : 100 } };
+                debate.aiSummary = { decisionReasoning: `${forfeitSide.toUpperCase()} side forfeited.` };
+                await debate.save();
+
+                await settleBets(debate, winnerSide);
+                await distributeXP(debate, winnerSide, 80, 10, 0);
+
+                io.to(`debate:${debateId}`).emit('debate_ended', {
+                    debateId:   debate._id,
+                    winner:     winnerSide,
+                    finalScores:{ pro: debate.scores.pro.total, con: debate.scores.con.total },
+                    reasoning:  `${socket.user.username} forfeited the debate.`,
+                    forfeit:    true,
+                });
+            } catch (error) {
+                console.error('forfeit error:', error);
+            }
+        });
+
+        // ─── LEAVE ───────────────────────────────────────────────────────────
+        socket.on('leave_debate', (data) => {
             const { debateId } = data;
             socket.leave(`debate:${debateId}`);
             socket.debateId = null;
         });
 
+        // ─── DISCONNECT ──────────────────────────────────────────────────────
         socket.on('disconnect', async () => {
-            console.log(`❌ User disconnected: ${socket.user.username}`);
+            console.log(`❌ Disconnected: ${socket.user.username}`);
             userSockets.delete(socket.user._id.toString());
             await User.findByIdAndUpdate(socket.user._id, { isOnline: false });
 
             if (socket.debateId) {
                 await Debate.findByIdAndUpdate(socket.debateId, {
-                    $inc: { spectatorCount: -1 },
+                    $inc:  { spectatorCount: -1 },
                     $pull: { spectators: { user: socket.user._id } },
                 });
             }
 
-            for (const [key, queue] of matchmakingQueue) {
-                const index = queue.findIndex(e => e.socketId === socket.id);
-                if (index > -1) queue.splice(index, 1);
+            // Remove from all queues
+            for (const [, queue] of matchmakingQueue) {
+                const i = queue.findIndex(e => e.socketId === socket.id);
+                if (i > -1) queue.splice(i, 1);
             }
         });
     });
 };
 
-/**
- * Try to match players in queue
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// MATCHMAKING
+// ─────────────────────────────────────────────────────────────────────────────
 async function tryMatchmaking(io, queueKey, type) {
     const queue = matchmakingQueue.get(queueKey);
-
     if (!queue) return;
 
-    const requiredPlayers = type === '1v1' ? 2 : type === '2v2' ? 4 : type === '3v3' ? 6 : 4;
+    const required = type === '1v1' ? 2 : type === '2v2' ? 4 : type === '3v3' ? 6 : 2;
+    console.log(`📋 Queue "${queueKey}": ${queue.length}/${required}`);
 
-    console.log(`📋 Queue "${queueKey}" has ${queue.length}/${requiredPlayers} players`);
-
-    if (queue.length >= requiredPlayers) {
-        console.log(`✅ Creating match...`);
-
-        const players = queue.splice(0, requiredPlayers);
-        const debate = await createDebate(players, type);
-        console.log(`🏆 Debate created: ${debate._id}`);
+    if (queue.length >= required) {
+        const players = queue.splice(0, required);
+        const debate  = await createDebate(players, type);
+        console.log(`🏆 Match created: ${debate._id}`);
 
         players.forEach((player, index) => {
             const playerSocket = io.sockets.sockets.get(player.socketId);
             if (playerSocket) {
+                const side = index < required / 2 ? 'pro' : 'con';
+                const opponent = players.find((_, i) =>
+                    (index < required / 2) !== (i < required / 2)
+                );
                 playerSocket.emit('match_found', {
                     debateId: debate._id,
-                    side: index < requiredPlayers / 2 ? 'pro' : 'con',
-                    topic: debate.topic,
-                    opponent: players.find((p, i) =>
-                        (index < requiredPlayers / 2) !== (i < requiredPlayers / 2)
-                    )?.username,
+                    side,
+                    topic:    debate.topic,
+                    opponent: opponent?.isAnonymous ? opponent.alias : opponent?.username,
+                    alias:    player.isAnonymous ? player.alias : null,
                 });
             }
         });
     }
 }
 
-/**
- * Create a new debate with fallback topic
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATE DEBATE
+// ─────────────────────────────────────────────────────────────────────────────
 async function createDebate(players, type) {
-    // Use static topics to avoid API calls
-    const topics = [
-        { title: 'Should social media be regulated by governments?', description: 'Debate the role of government in controlling social media platforms.', category: 'Technology' },
-        { title: 'Is remote work better than office work?', description: 'Compare productivity and work-life balance in remote vs office settings.', category: 'Social' },
-        { title: 'Should college education be free?', description: 'Discuss the pros and cons of free higher education.', category: 'Economy' },
-        { title: 'Is AI a threat to human jobs?', description: 'Debate whether artificial intelligence will replace human workers.', category: 'Technology' },
-        { title: 'Should voting be mandatory?', description: 'Discuss whether all citizens should be required to vote.', category: 'Politics' },
-        { title: 'Is climate change the biggest threat to humanity?', description: 'Debate the urgency and severity of climate change.', category: 'Science' },
-        { title: 'Should smartphones be banned in schools?', description: 'Discuss the impact of phones on student learning.', category: 'Social' },
-        { title: 'Is space exploration worth the cost?', description: 'Debate funding priorities between space and Earth problems.', category: 'Science' },
+    const FALLBACK_TOPICS = [
+        { title: 'Should social media be regulated by governments?', description: 'Debate the role of government in controlling social media.', category: 'Technology' },
+        { title: 'Is remote work better than office work?', description: 'Compare productivity in remote vs office settings.', category: 'Social' },
+        { title: 'Should college education be free?', description: 'Pros and cons of free higher education.', category: 'Economy' },
+        { title: 'Is AI a threat to human jobs?', description: 'Will AI replace human workers?', category: 'Technology' },
+        { title: 'Should voting be mandatory?', description: 'Civic duty vs personal choice.', category: 'Politics' },
+        { title: 'Is climate change the biggest threat to humanity?', description: 'The urgency of climate action.', category: 'Science' },
+        { title: 'Should smartphones be banned in schools?', description: 'The impact of phones on student learning.', category: 'Social' },
     ];
 
-    const topicData = topics[Math.floor(Math.random() * topics.length)];
+    const topicData = FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)];
 
-    const halfPoint = players.length / 2;
-    const proTeam = players.slice(0, halfPoint).map(p => ({
-        user: p.userId,
-        isAnonymous: p.isAnonymous,
-        alias: p.isAnonymous ? `Anonymous_${Math.random().toString(36).substr(2, 5)}` : null,
-        role: 'lead',
+    const half    = players.length / 2;
+    const proTeam = players.slice(0, half).map(p => ({
+        user: p.userId, isAnonymous: p.isAnonymous, alias: p.alias || null, role: 'lead',
     }));
-    const conTeam = players.slice(halfPoint).map(p => ({
-        user: p.userId,
-        isAnonymous: p.isAnonymous,
-        alias: p.isAnonymous ? `Anonymous_${Math.random().toString(36).substr(2, 5)}` : null,
-        role: 'lead',
+    const conTeam = players.slice(half).map(p => ({
+        user: p.userId, isAnonymous: p.isAnonymous, alias: p.alias || null, role: 'lead',
     }));
 
     const debate = await Debate.create({
         type,
-        topic: {
-            title: topicData.title,
-            description: topicData.description,
-            category: topicData.category,
-        },
+        topic: { title: topicData.title, description: topicData.description, category: topicData.category },
         proTeam,
         conTeam,
         rounds: [
-            { roundNumber: 1, type: 'opening', duration: 120, messages: [] },
-            { roundNumber: 2, type: 'rebuttal', duration: 90, messages: [] },
-            { roundNumber: 3, type: 'counter', duration: 60, messages: [] },
-            { roundNumber: 4, type: 'closing', duration: 60, messages: [] },
+            { roundNumber: 1, type: 'opening',  duration: 120, messages: [] },
+            { roundNumber: 2, type: 'rebuttal', duration: 90,  messages: [] },
+            { roundNumber: 3, type: 'counter',  duration: 60,  messages: [] },
+            { roundNumber: 4, type: 'closing',  duration: 60,  messages: [] },
         ],
         currentRound: 0,
-        currentSide: 'pro',
-        status: 'active',
-        startedAt: new Date(),
-        turnEndsAt: new Date(Date.now() + 120000),
+        currentSide:  'pro',
+        status:       'active',
+        startedAt:    new Date(),
+        turnEndsAt:   new Date(Date.now() + 120000),
     });
 
     activeDebates.set(debate._id.toString(), debate);
     return debate;
 }
 
-/**
- * Finish debate - AI ranks ALL arguments at once and declares winner
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// FINISH DEBATE — single batched AI call
+// ─────────────────────────────────────────────────────────────────────────────
 async function finishDebate(io, debate) {
-    console.log('🏁 finishDebate called for:', debate._id);
-
-    if (debate.status === 'finished') {
-        console.log('⚠️ Already finished');
-        return;
-    }
+    if (debate.status === 'finished') return;
 
     debate.bettingOpen = false;
-    debate.status = 'finished';
-    debate.endedAt = new Date();
+    debate.status      = 'finished';
+    debate.endedAt     = new Date();
 
-    // Collect all messages
-    const allMessages = debate.rounds.flatMap(r => r.messages);
-    const proMessages = allMessages.filter(m =>
+    // Gather all messages per side
+    const allMessages  = debate.rounds.flatMap(r => r.messages);
+    const proMessages  = allMessages.filter(m =>
         debate.proTeam.some(p => p.user.toString() === m.sender.toString())
     );
-    const conMessages = allMessages.filter(m =>
+    const conMessages  = allMessages.filter(m =>
         debate.conTeam.some(p => p.user.toString() === m.sender.toString())
     );
 
-    console.log(`📊 Total messages - PRO: ${proMessages.length}, CON: ${conMessages.length}`);
+    console.log(`🤖 Sending ${proMessages.length + conMessages.length} messages to OpenAI for batch analysis...`);
 
-    // Prepare arguments for AI ranking
-    const proArgs = proMessages.map(m => m.content).join('\n\n---\n\n');
-    const conArgs = conMessages.map(m => m.content).join('\n\n---\n\n');
+    // Single AI call — covers scoring, fact-checking, moderation, feedback
+    let analysis = null;
+    try {
+        analysis = await openaiService.analyzeDebateBatch(
+            debate.topic.title,
+            proMessages.map((m, i) => ({ index: i + 1, content: m.content })),
+            conMessages.map((m, i) => ({ index: i + 1, content: m.content }))
+        );
+    } catch (err) {
+        console.error('Batch AI failed:', err.message);
+    }
 
-    let winnerSide = 'draw';
-    let proScore = 50;
-    let conScore = 50;
-    let reasoning = 'Both sides presented their arguments.';
+    // If AI failed, use heuristic fallback
+    if (!analysis) {
+        console.log('📊 AI unavailable — using smart heuristic fallback...');
+        analysis = openaiService.smartFallbackScore(
+            proMessages.map(m => ({ content: m.content })),
+            conMessages.map(m => ({ content: m.content }))
+        );
+    }
 
-    // Single AI call to rank all arguments and determine winner (with retry)
-    let aiSuccess = false;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-            console.log(`🤖 AI ranking attempt ${attempt}...`);
-            const result = await geminiService.rankDebate(debate.topic.title, proArgs, conArgs);
+    const { winner: winnerSide, proScore, conScore, reasoning, feedback, factChecks, moderationFlags, highlights } = analysis;
 
-            if (result) {
-                winnerSide = result.winner || 'draw';
-                proScore = result.proScore || 50;
-                conScore = result.conScore || 50;
-                reasoning = result.reasoning || reasoning;
-                aiSuccess = true;
-                console.log(`🏆 AI Result: ${winnerSide} wins (PRO: ${proScore}, CON: ${conScore})`);
-                break;
-            }
-        } catch (err) {
-            console.error(`AI ranking attempt ${attempt} failed:`, err.message);
-
-            // Check if it's a rate limit error and wait
-            if (err.status === 429 && attempt === 1) {
-                console.log('⏳ Rate limited, waiting 35 seconds to retry...');
-                await new Promise(resolve => setTimeout(resolve, 35000));
+    // Apply moderation flags retroactively (add warning to users)
+    if (moderationFlags?.length > 0) {
+        for (const flag of moderationFlags) {
+            if (flag.severity === 'high') {
+                const team = flag.side === 'pro' ? debate.proTeam : debate.conTeam;
+                for (const p of team) {
+                    await User.findByIdAndUpdate(p.user, { $inc: { warnings: 1 } });
+                    console.log(`⚠️ Moderation warning issued to ${p.user} (${flag.severity})`);
+                }
             }
         }
     }
 
-    // Smart fallback if AI failed
-    if (!aiSuccess) {
-        console.log('📊 Using smart fallback scoring...');
-
-        // Analyze arguments without AI
-        const analyzeArgs = (args) => {
-            const words = args.split(/\s+/).filter(w => w.length > 0);
-            const sentences = args.split(/[.!?]+/).filter(s => s.trim().length > 0);
-            const uniqueWords = new Set(words.map(w => w.toLowerCase()));
-            const avgSentenceLength = words.length / Math.max(sentences.length, 1);
-
-            // Score based on:
-            // - Word count (more = more effort)
-            // - Unique words (vocabulary diversity)
-            // - Average sentence length (clarity - not too short, not too long)
-            const wordScore = Math.min(words.length / 10, 30); // max 30 points
-            const diversityScore = Math.min(uniqueWords.size / 5, 25); // max 25 points
-            const clarityScore = avgSentenceLength >= 8 && avgSentenceLength <= 25 ? 20 : 10; // 10-20 points
-            const lengthBonus = args.length > 200 ? 10 : args.length > 100 ? 5 : 0; // 0-10 points
-
-            return wordScore + diversityScore + clarityScore + lengthBonus;
-        };
-
-        const proFallbackScore = analyzeArgs(proArgs);
-        const conFallbackScore = analyzeArgs(conArgs);
-
-        console.log(`📊 Fallback scores - PRO: ${proFallbackScore.toFixed(1)}, CON: ${conFallbackScore.toFixed(1)}`);
-
-        // Normalize to 0-100 scale
-        const total = proFallbackScore + conFallbackScore;
-        if (total > 0) {
-            proScore = Math.round((proFallbackScore / total) * 100);
-            conScore = 100 - proScore;
-        }
-
-        // Determine winner (need at least 5% margin to avoid draw)
-        const diff = proScore - conScore;
-        if (diff >= 5) {
-            winnerSide = 'pro';
-            reasoning = 'PRO presented more detailed and diverse arguments.';
-        } else if (diff <= -5) {
-            winnerSide = 'con';
-            reasoning = 'CON presented more detailed and diverse arguments.';
-        } else {
-            winnerSide = 'draw';
-            reasoning = 'Both sides presented equally strong arguments.';
-        }
-
-        console.log(`🏆 Fallback Result: ${winnerSide} wins (PRO: ${proScore}, CON: ${conScore})`);
-    }
-
-    const margin = Math.abs(proScore - conScore);
-
+    // Save scores and result to DB
     debate.scores = {
         pro: { total: proScore },
         con: { total: conScore },
     };
-
     debate.winner = {
-        side: winnerSide,
-        team: winnerSide === 'pro' ? debate.proTeam.map(p => p.user) :
-            winnerSide === 'con' ? debate.conTeam.map(p => p.user) : [],
-        score: winnerSide === 'pro' ? proScore : conScore,
-        margin: margin,
+        side:   winnerSide,
+        team:   winnerSide === 'pro' ? debate.proTeam.map(p => p.user) :
+                winnerSide === 'con' ? debate.conTeam.map(p => p.user) : [],
+        score:  winnerSide === 'pro' ? proScore : conScore,
+        margin: Math.abs(proScore - conScore),
     };
     debate.loserScore = winnerSide === 'pro' ? conScore : proScore;
-    debate.aiSummary = { decisionReasoning: reasoning };
+    debate.aiSummary = {
+        decisionReasoning:  reasoning,
+        strengthsWeaknesses: feedback
+            ? {
+                pro: { strengths: feedback.pro?.strengths || [], weaknesses: feedback.pro?.weaknesses || [] },
+                con: { strengths: feedback.con?.strengths || [], weaknesses: feedback.con?.weaknesses || [] },
+            }
+            : { pro: { strengths: [], weaknesses: [] }, con: { strengths: [], weaknesses: [] } },
+        keyPoints: {
+            pro: highlights?.slice(0, 2) || [],
+            con: [],
+        },
+        factChecks: factChecks || [],
+        moderationFlags: moderationFlags || [],
+    };
 
     await debate.save();
 
-    // Update user stats
-    const xpWin = 100;
-    const xpLose = 25;
-    const xpDraw = 50;
+    // Distribute XP
+    await distributeXP(debate, winnerSide, 100, 25, 50);
 
+    // Settle bets
+    try { await settleBets(debate, winnerSide); } catch (e) {
+        console.error('Bet settlement error:', e.message);
+    }
+
+    // Update category stats
+    await updateCategoryStats(debate, winnerSide);
+
+    const resultPayload = {
+        debateId:     debate._id,
+        winner:       winnerSide,
+        finalScores:  { pro: proScore, con: conScore },
+        margin:       Math.abs(proScore - conScore),
+        reasoning,
+        feedback:     feedback || null,
+        factChecks:   factChecks || [],
+        moderationFlags: moderationFlags || [],
+        highlights:   highlights || [],
+        xpRewards:    { winner: 100, loser: 25, draw: 50 },
+    };
+
+    console.log(`📢 Broadcasting debate_ended for ${debate._id}. Winner: ${winnerSide}`);
+    io.to(`debate:${debate._id}`).emit('debate_ended', resultPayload);
+    activeDebates.delete(debate._id.toString());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// XP DISTRIBUTION
+// ─────────────────────────────────────────────────────────────────────────────
+async function distributeXP(debate, winnerSide, xpWin, xpLose, xpDraw) {
     if (winnerSide !== 'draw') {
-        const winningTeam = winnerSide === 'pro' ? debate.proTeam : debate.conTeam;
-        const losingTeam = winnerSide === 'pro' ? debate.conTeam : debate.proTeam;
+        const winners = winnerSide === 'pro' ? debate.proTeam : debate.conTeam;
+        const losers  = winnerSide === 'pro' ? debate.conTeam : debate.proTeam;
 
-        for (const player of winningTeam) {
-            await User.findByIdAndUpdate(player.user, {
+        for (const p of winners) {
+            await User.findByIdAndUpdate(p.user, {
                 $inc: { xp: xpWin, reputation: 10, wins: 1, totalDebates: 1, winStreak: 1 },
             });
         }
-
-        for (const player of losingTeam) {
-            await User.findByIdAndUpdate(player.user, {
+        for (const p of losers) {
+            await User.findByIdAndUpdate(p.user, {
                 $inc: { xp: xpLose, losses: 1, totalDebates: 1 },
                 $set: { winStreak: 0 },
             });
         }
     } else {
-        for (const player of [...debate.proTeam, ...debate.conTeam]) {
-            await User.findByIdAndUpdate(player.user, {
+        for (const p of [...debate.proTeam, ...debate.conTeam]) {
+            await User.findByIdAndUpdate(p.user, {
                 $inc: { xp: xpDraw, draws: 1, totalDebates: 1 },
             });
         }
     }
-
-    // Settle bets
-    try {
-        await settleBets(debate, winnerSide);
-    } catch (err) {
-        console.error('Bet settlement error:', err.message);
-    }
-
-    // Broadcast result to ALL
-    const resultPayload = {
-        debateId: debate._id,
-        winner: winnerSide,
-        finalScores: { pro: proScore, con: conScore },
-        margin: margin,
-        reasoning: reasoning,
-        xpRewards: { winner: xpWin, loser: xpLose, draw: xpDraw },
-        proTeam: debate.proTeam,
-        conTeam: debate.conTeam,
-    };
-
-    console.log('📢 Broadcasting debate_ended:', resultPayload);
-    io.to(`debate:${debate._id}`).emit('debate_ended', resultPayload);
-
-    activeDebates.delete(debate._id.toString());
 }
 
-/**
- * Settle bets
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// BET SETTLEMENT
+// ─────────────────────────────────────────────────────────────────────────────
 async function settleBets(debate, winner) {
     const bets = await Bet.find({ debate: debate._id, result: 'pending' });
-
     for (const bet of bets) {
-        if (bet.predictedWinner === winner) {
+        if (winner === 'draw') {
+            bet.result = 'refunded'; bet.payout = bet.amount; bet.profit = 0;
+        } else if (bet.predictedWinner === winner) {
             const payout = Math.round(bet.amount * (bet.oddsAtBet || 2));
-            bet.result = 'won';
-            bet.payout = payout;
-            bet.profit = payout - bet.amount;
-            bet.settledAt = new Date();
-            await bet.save();
+            bet.result = 'won'; bet.payout = payout; bet.profit = payout - bet.amount;
             await User.findByIdAndUpdate(bet.bettor, { $inc: { xp: payout } });
-        } else if (winner === 'draw') {
-            bet.result = 'refunded';
-            bet.payout = bet.amount;
-            bet.profit = 0;
-            bet.settledAt = new Date();
-            await bet.save();
-            await User.findByIdAndUpdate(bet.bettor, { $inc: { xp: bet.amount } });
         } else {
-            bet.result = 'lost';
-            bet.payout = 0;
-            bet.profit = -bet.amount;
-            bet.settledAt = new Date();
-            await bet.save();
+            bet.result = 'lost'; bet.payout = 0; bet.profit = -bet.amount;
         }
+        bet.settledAt = new Date();
+        await bet.save();
+
+        if (winner === 'draw') {
+            await User.findByIdAndUpdate(bet.bettor, { $inc: { xp: bet.amount } });
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATEGORY STATS UPDATE
+// ─────────────────────────────────────────────────────────────────────────────
+async function updateCategoryStats(debate, winnerSide) {
+    const category = debate.topic.category;
+    if (!category) return;
+
+    const updateSide = async (team, isWinner) => {
+        for (const p of team) {
+            const key = `categoryStats.${category}`;
+            await User.findByIdAndUpdate(p.user, {
+                $inc: { [`${key}.wins`]: isWinner ? 1 : 0, [`${key}.losses`]: isWinner ? 0 : 1 },
+            });
+        }
+    };
+
+    if (winnerSide !== 'draw') {
+        const winners = winnerSide === 'pro' ? debate.proTeam : debate.conTeam;
+        const losers  = winnerSide === 'pro' ? debate.conTeam : debate.proTeam;
+        await updateSide(winners, true);
+        await updateSide(losers, false);
     }
 }
 

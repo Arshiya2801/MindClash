@@ -96,4 +96,10 @@ export const marketplaceAPI = {
     getPurchases: () => api.get('/marketplace/my-purchases'),
 };
 
+// Report API
+export const reportAPI = {
+    submit: (data) => api.post('/reports', data),
+    getMyReports: () => api.get('/reports/my'),
+};
+
 export default api;

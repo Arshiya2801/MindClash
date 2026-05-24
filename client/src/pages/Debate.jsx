@@ -7,7 +7,7 @@ import {
     Send, Timer, MessageCircle, Users, TrendingUp,
     CheckCircle, AlertCircle, Zap, Flame, Star, Hand,
     ArrowLeft, Mic, MicOff, Volume2, VolumeX, Award,
-    Eye, Clock, ThumbsUp, ThumbsDown, Flag, Trophy, X
+    Eye, Clock, ThumbsUp, ThumbsDown, Flag, Trophy, X, Shield
 } from 'lucide-react';
 
 const Debate = () => {
@@ -87,6 +87,10 @@ const Debate = () => {
                         con: debate.scores?.con?.total || 0,
                     },
                     reasoning: debate.aiSummary?.decisionReasoning || 'Debate concluded.',
+                    feedback: debate.aiSummary?.strengthsWeaknesses || null,
+                    factChecks: debate.aiSummary?.factChecks || [],
+                    moderationFlags: debate.aiSummary?.moderationFlags || [],
+                    highlights: debate.aiSummary?.keyPoints?.pro || [],
                 });
             }
 
@@ -291,8 +295,10 @@ const Debate = () => {
                         background: '#fff',
                         borderRadius: '24px',
                         padding: '32px',
-                        maxWidth: '500px',
+                        maxWidth: '650px',
                         width: '100%',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
                         textAlign: 'center',
                         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
                     }}
@@ -388,6 +394,86 @@ const Debate = () => {
                             <p style={{ fontSize: '13px', color: '#525252', lineHeight: '1.6' }}>
                                 {debateResult.reasoning}
                             </p>
+                        </div>
+                    )}
+
+                    {debateResult.moderationFlags?.length > 0 && (
+                        <div style={{ textAlign: 'left', padding: '16px', background: '#fee2e2', borderRadius: '12px', marginBottom: '24px', border: '1px solid #fca5a5' }}>
+                            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#991b1b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Flag style={{ width: '16px', height: '16px' }} /> Moderation Flags
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {debateResult.moderationFlags.map((flag, idx) => (
+                                    <div key={idx} style={{ fontSize: '13px', color: '#7f1d1d', background: '#fef2f2', padding: '8px', borderRadius: '8px' }}>
+                                        <strong>{flag.side.toUpperCase()} Side (Arg {flag.argIndex}):</strong> {flag.issue} <span style={{ padding: '2px 6px', background: flag.severity === 'high' ? '#991b1b' : '#dc2626', color: '#fff', borderRadius: '4px', fontSize: '11px', marginLeft: '6px' }}>{flag.severity}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {debateResult.factChecks?.length > 0 && (
+                        <div style={{ textAlign: 'left', padding: '16px', background: '#f0fdf4', borderRadius: '12px', marginBottom: '24px', border: '1px solid #bbf7d0' }}>
+                            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#166534', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Shield style={{ width: '16px', height: '16px' }} /> Fact Checks
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {debateResult.factChecks.map((check, idx) => (
+                                    <div key={idx} style={{ fontSize: '13px', color: '#15803d', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #dcfce3' }}>
+                                        <div style={{ marginBottom: '4px' }}><strong>Claim:</strong> "{check.claim}"</div>
+                                        <div style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <strong>Verdict:</strong> 
+                                            <span style={{ 
+                                                padding: '2px 8px', borderRadius: '50px', fontSize: '11px', fontWeight: '600',
+                                                background: check.verdict.includes('true') ? '#d1fae5' : check.verdict.includes('false') ? '#fee2e2' : '#fef3c7',
+                                                color: check.verdict.includes('true') ? '#059669' : check.verdict.includes('false') ? '#dc2626' : '#d97706'
+                                            }}>
+                                                {check.verdict.toUpperCase().replace('_', ' ')}
+                                            </span>
+                                        </div>
+                                        <div><strong>Note:</strong> {check.note}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {debateResult.feedback && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px', textAlign: 'left' }}>
+                            {['pro', 'con'].map(side => {
+                                const fb = debateResult.feedback[side];
+                                if (!fb) return null;
+                                return (
+                                    <div key={side} style={{ padding: '16px', background: side === 'pro' ? '#ecfdf5' : '#fef2f2', borderRadius: '12px', border: side === 'pro' ? '1px solid #a7f3d0' : '1px solid #fecaca' }}>
+                                        <h4 style={{ fontSize: '14px', fontWeight: '700', color: side === 'pro' ? '#059669' : '#dc2626', marginBottom: '12px' }}>
+                                            {side.toUpperCase()} Feedback
+                                        </h4>
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <strong style={{ fontSize: '12px', color: '#171717', display: 'flex', alignItems: 'center', gap: '4px' }}><ThumbsUp style={{ width:'14px', height:'14px', color:'#10b981' }}/> Strengths</strong>
+                                            <ul style={{ fontSize: '12px', color: '#525252', paddingLeft: '20px', margin: '4px 0 0 0' }}>
+                                                {fb.strengths?.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <strong style={{ fontSize: '12px', color: '#171717', display: 'flex', alignItems: 'center', gap: '4px' }}><ThumbsDown style={{ width:'14px', height:'14px', color:'#ef4444' }}/> Weaknesses</strong>
+                                            <ul style={{ fontSize: '12px', color: '#525252', paddingLeft: '20px', margin: '4px 0 0 0' }}>
+                                                {fb.weaknesses?.map((w, i) => <li key={i} style={{ marginBottom: '4px' }}>{w}</li>)}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {debateResult.highlights?.length > 0 && (
+                        <div style={{ textAlign: 'left', padding: '16px', background: '#fffbeb', borderRadius: '12px', marginBottom: '24px', border: '1px solid #fde68a' }}>
+                            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#b45309', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Star style={{ width: '16px', height: '16px' }} /> Debate Highlights
+                            </h4>
+                            <ul style={{ fontSize: '13px', color: '#92400e', paddingLeft: '20px', margin: 0 }}>
+                                {debateResult.highlights.map((h, i) => <li key={i} style={{ marginBottom: '4px' }}>{h}</li>)}
+                            </ul>
                         </div>
                     )}
 

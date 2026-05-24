@@ -1,7 +1,7 @@
 import express from 'express';
 import Topic from '../models/Topic.js';
 import { protect } from '../middleware/authMiddleware.js';
-import geminiService from '../services/geminiService.js';
+import openaiService from '../services/openaiService.js';
 
 const router = express.Router();
 
@@ -85,7 +85,7 @@ router.get('/random', async (req, res) => {
 
         if (!topic) {
             // Generate one with AI if no topics exist
-            const generated = await geminiService.generateTopic(category || 'General');
+            const generated = await openaiService.generateTopic(category || 'General');
             return res.json({
                 success: true,
                 topic: {
@@ -117,7 +117,7 @@ router.post('/generate', protect, async (req, res) => {
     try {
         const { category, difficulty } = req.body;
 
-        const generated = await geminiService.generateTopic(
+        const generated = await openaiService.generateTopic(
             category || 'General',
             difficulty || 'intermediate'
         );

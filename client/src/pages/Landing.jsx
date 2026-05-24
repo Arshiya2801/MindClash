@@ -22,7 +22,7 @@ const Landing = () => {
         {
             icon: <Brain className="w-6 h-6" />,
             title: 'AI-Powered',
-            description: 'Gemini AI moderates, fact-checks, and scores every argument',
+            description: 'OpenAI moderates, fact-checks, and scores every argument',
             iconBg: 'bg-sky-50 text-sky-500'
         },
         {

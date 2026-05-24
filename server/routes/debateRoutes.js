@@ -3,7 +3,7 @@ import Debate from '../models/Debate.js';
 import Topic from '../models/Topic.js';
 import { protect, optionalAuth } from '../middleware/authMiddleware.js';
 import { mongoIdValidation, paginationValidation } from '../middleware/validation.js';
-import geminiService from '../services/geminiService.js';
+import openaiService from '../services/openaiService.js';
 
 const router = express.Router();
 
@@ -227,7 +227,7 @@ router.post('/generate-topic', protect, async (req, res) => {
     try {
         const { category, difficulty } = req.body;
 
-        const topic = await geminiService.generateTopic(
+        const topic = await openaiService.generateTopic(
             category || 'General',
             difficulty || 'intermediate'
         );
@@ -261,7 +261,7 @@ router.post('/assist', protect, async (req, res) => {
     try {
         const { draft, side, topic, opponentArguments } = req.body;
 
-        const assistance = await geminiService.assistArgument(
+        const assistance = await openaiService.assistArgument(
             draft,
             side,
             topic,

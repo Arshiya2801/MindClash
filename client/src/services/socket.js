@@ -1,20 +1,25 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+// Production: socket connects to the same origin as API (Render URL)
+// Dev: connects to localhost:5000 via Vite proxy
+const SOCKET_URL = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL.replace('/api', '')  // strip "/api" suffix to get base URL
+    : (import.meta.env.DEV ? 'http://localhost:5000' : window.location.origin);
 
 let socket = null;
 
 export const connectSocket = (token) => {
-    if (socket?.connected) {
-        return socket;
-    }
+    if (socket?.connected) return socket;
 
     socket = io(SOCKET_URL, {
         auth: { token },
-        transports: ['websocket', 'polling'],
+        // polling first — required for Render.com which doesn't support raw WebSocket upgrades without sticky sessions
+        transports: ['polling', 'websocket'],
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 10,
         reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
     });
 
     socket.on('connect', () => {
@@ -41,41 +46,26 @@ export const disconnectSocket = () => {
 
 export const getSocket = () => socket;
 
-// Matchmaking
-export const joinQueue = (data) => {
-    socket?.emit('join_queue', data);
-};
+// ─── Matchmaking ──────────────────────────────────────────────────────────────
+export const joinQueue = (data) => socket?.emit('join_queue', data);
+export const leaveQueue = (data) => socket?.emit('leave_queue', data);
 
-export const leaveQueue = (data) => {
-    socket?.emit('leave_queue', data);
-};
+// ─── Debate ───────────────────────────────────────────────────────────────────
+export const joinDebate = (debateId) => socket?.emit('join_debate', { debateId });
+export const leaveDebate = (debateId) => socket?.emit('leave_debate', { debateId });
+export const submitArgument = (debateId, content) => socket?.emit('submit_argument', { debateId, content });
+export const forfeit = (debateId) => socket?.emit('forfeit', { debateId });
 
-// Debate
-export const joinDebate = (debateId) => {
-    socket?.emit('join_debate', { debateId });
-};
+// ─── Spectator ────────────────────────────────────────────────────────────────
+export const sendSpectatorChat = (debateId, message, isAnonymous = false) =>
+    socket?.emit('spectator_chat', { debateId, message, isAnonymous });
 
-export const submitArgument = (debateId, content) => {
-    socket?.emit('submit_argument', { debateId, content });
-};
+export const sendReaction = (debateId, emoji) =>
+    socket?.emit('reaction', { debateId, emoji });
 
-export const requestAssist = (debateId, draft) => {
-    socket?.emit('request_assist', { debateId, draft });
-};
-
-// Spectator
-export const sendSpectatorMessage = (debateId, content, isAnonymous = false) => {
-    socket?.emit('spectator_message', { debateId, content, isAnonymous });
-};
-
-export const sendReaction = (debateId, type) => {
-    socket?.emit('reaction', { debateId, type });
-};
-
-// Betting
-export const placeBet = (debateId, predictedWinner, amount) => {
-    socket?.emit('place_bet', { debateId, predictedWinner, amount });
-};
+// ─── Betting ──────────────────────────────────────────────────────────────────
+export const placeBet = (debateId, side, amount) =>
+    socket?.emit('place_bet', { debateId, side, amount });
 
 export default {
     connectSocket,
@@ -84,9 +74,10 @@ export default {
     joinQueue,
     leaveQueue,
     joinDebate,
+    leaveDebate,
     submitArgument,
-    requestAssist,
-    sendSpectatorMessage,
+    forfeit,
+    sendSpectatorChat,
     sendReaction,
     placeBet,
 };

@@ -206,6 +206,17 @@ const debateSchema = new mongoose.Schema({
                 weaknesses: [String],
             },
         },
+        factChecks: [{
+            claim: String,
+            verdict: String,
+            note: String,
+        }],
+        moderationFlags: [{
+            side: String,
+            argIndex: Number,
+            issue: String,
+            severity: String,
+        }],
     },
 
     // Spectators

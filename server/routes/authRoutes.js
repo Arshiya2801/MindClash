@@ -2,7 +2,7 @@ import express from 'express';
 import User from '../models/User.js';
 import { generateToken, protect } from '../middleware/authMiddleware.js';
 import { registerValidation, loginValidation } from '../middleware/validation.js';
-import geminiService from '../services/geminiService.js';
+import openaiService from '../services/openaiService.js';
 
 const router = express.Router();
 
@@ -30,7 +30,7 @@ router.post('/register', registerValidation, async (req, res) => {
         }
 
         // Generate anonymous alias
-        const anonymousAlias = await geminiService.generateAlias();
+        const anonymousAlias = await openaiService.generateAlias();
 
         // Create user
         const user = await User.create({
