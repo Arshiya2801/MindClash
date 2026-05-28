@@ -506,7 +506,8 @@ async function createDebate(players, type) {
         user: p.userId, isAnonymous: p.isAnonymous, alias: p.alias || null, role: 'lead',
     }));
 
-    // 1v1 = 5 rounds, team debates = 6 rounds
+    // 1v1 uses 5 rounds (1 message/player/round = 5 messages total)
+    // 2v2 uses 3 rounds (2 messages/team/round = 6 messages total)
     const is1v1 = type === '1v1';
     const rounds = is1v1
         ? [
@@ -519,10 +520,7 @@ async function createDebate(players, type) {
         : [
             { roundNumber: 1, type: 'opening',  duration: 120, messages: [] },
             { roundNumber: 2, type: 'rebuttal', duration: 90,  messages: [] },
-            { roundNumber: 3, type: 'counter',  duration: 60,  messages: [] },
-            { roundNumber: 4, type: 'rebuttal', duration: 60,  messages: [] },
-            { roundNumber: 5, type: 'counter',  duration: 60,  messages: [] },
-            { roundNumber: 6, type: 'closing',  duration: 60,  messages: [] },
+            { roundNumber: 3, type: 'closing',  duration: 60,  messages: [] },
         ];
 
     const debate = await Debate.create({

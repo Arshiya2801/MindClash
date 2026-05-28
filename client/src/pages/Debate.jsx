@@ -55,7 +55,7 @@ const Debate = () => {
     const myRoleRef = useRef(null);
 
     const reactionEmojis = ['🔥', '👏', '💯', '🤔', '😱', '💀'];
-    const roundNames = ['Opening', 'Rebuttal', 'Counter', 'Closing'];
+    const totalMessages = debate?.type === '1v1' ? 5 : 6;
 
     useEffect(() => {
         const socket = getSocket();
@@ -704,7 +704,9 @@ const Debate = () => {
                             fontSize: '13px',
                             fontWeight: '600'
                         }}>
-                            Round {currentRound + 1}: {roundNames[currentRound] || 'Debate'}
+                            Round {currentRound + 1}: {debate?.rounds?.[currentRound]?.type 
+                                ? debate.rounds[currentRound].type.charAt(0).toUpperCase() + debate.rounds[currentRound].type.slice(1) 
+                                : 'Debate'}
                         </span>
                         <div style={{
                             padding: '8px 16px',
@@ -758,7 +760,7 @@ const Debate = () => {
                                     fontWeight: '700',
                                     color: '#059669'
                                 }}>
-                                    {messageCount.pro}/5 arguments
+                                    {messageCount.pro}/{totalMessages} arguments
                                 </span>
                             </div>
                             <div style={{ fontSize: '24px' }}>⚔️</div>
@@ -771,7 +773,7 @@ const Debate = () => {
                                     fontWeight: '700',
                                     color: '#dc2626'
                                 }}>
-                                    {messageCount.con}/5 arguments
+                                    {messageCount.con}/{totalMessages} arguments
                                 </span>
                                 <span style={{ fontSize: '13px', color: '#737373' }}>
                                     {debate.conTeam?.map(p => p.user?.username || 'Anonymous').join(', ')}
@@ -780,7 +782,7 @@ const Debate = () => {
                             </div>
                         </div>
                         <p style={{ textAlign: 'center', fontSize: '12px', color: '#737373', marginTop: '8px' }}>
-                            Debate ends after both sides submit 5 arguments. AI will judge all arguments at the end.
+                            Debate ends after both sides submit {totalMessages} arguments. AI will judge all arguments at the end.
                         </p>
                     </div>
 
