@@ -55,7 +55,7 @@ const Debate = () => {
     const myRoleRef = useRef(null);
 
     const reactionEmojis = ['🔥', '👏', '💯', '🤔', '😱', '💀'];
-    const roundNames = ['Opening', 'Rebuttal', 'Counter', 'Closing'];
+    const totalMessages = debate?.type === '1v1' ? 5 : 6;
 
     useEffect(() => {
         const socket = getSocket();
@@ -118,14 +118,19 @@ const Debate = () => {
             setMessageCount({ pro: proCount, con: conCount });
 
             if (role !== 'spectator') {
-                setIsMyTurn(debate.currentSide === role);
+                if (debate.currentTurn) {
+                    const currentTurnId = debate.currentTurn._id || debate.currentTurn;
+                    setIsMyTurn(currentTurnId.toString() === (user.id || user._id).toString());
+                } else {
+                    setIsMyTurn(debate.currentSide === role);
+                }
             }
 
             setLoading(false);
         };
 
         const onArgumentSubmitted = (data) => {
-            const { message, side, nextTurn, turnEndsAt, messageCount: count } = data;
+            const { message, side, nextTurn, nextTurnUser, turnEndsAt, messageCount: count } = data;
             setMessages(prev => [...prev, { ...message, side }]);
             if (count) setMessageCount(count);
             setCurrentSide(nextTurn);
@@ -133,7 +138,14 @@ const Debate = () => {
                 const remaining = Math.max(0, Math.floor((new Date(turnEndsAt) - Date.now()) / 1000));
                 setTimeLeft(remaining);
             }
-            setIsMyTurn(nextTurn === myRoleRef.current);
+            if (myRoleRef.current && myRoleRef.current !== 'spectator') {
+                if (nextTurnUser) {
+                    const nextTurnUserId = nextTurnUser._id || nextTurnUser;
+                    setIsMyTurn(nextTurnUserId.toString() === (user.id || user._id).toString());
+                } else {
+                    setIsMyTurn(nextTurn === myRoleRef.current);
+                }
+            }
             setIsSubmitting(false);
         };
 
@@ -141,7 +153,12 @@ const Debate = () => {
             setCurrentSide(data.side);
             setTimeLeft(data.duration || 120);
             if (myRoleRef.current && myRoleRef.current !== 'spectator') {
-                setIsMyTurn(data.side === myRoleRef.current);
+                if (data.nextTurnUser) {
+                    const nextTurnUserId = data.nextTurnUser._id || data.nextTurnUser;
+                    setIsMyTurn(nextTurnUserId.toString() === (user.id || user._id).toString());
+                } else {
+                    setIsMyTurn(data.side === myRoleRef.current);
+                }
             }
         };
 
@@ -149,6 +166,14 @@ const Debate = () => {
             setCurrentRound(data.roundNumber - 1);
             setCurrentSide(data.side);
             setTimeLeft(data.duration || 120);
+            if (myRoleRef.current && myRoleRef.current !== 'spectator') {
+                if (data.nextTurnUser) {
+                    const nextTurnUserId = data.nextTurnUser._id || data.nextTurnUser;
+                    setIsMyTurn(nextTurnUserId.toString() === (user.id || user._id).toString());
+                } else {
+                    setIsMyTurn(data.side === myRoleRef.current);
+                }
+            }
         };
 
         const onSpectatorMessage  = (data) => setSpectatorChat(prev => [...prev, data]);
@@ -679,7 +704,9 @@ const Debate = () => {
                             fontSize: '13px',
                             fontWeight: '600'
                         }}>
-                            Round {currentRound + 1}: {roundNames[currentRound] || 'Debate'}
+                            Round {currentRound + 1}: {debate?.rounds?.[currentRound]?.type 
+                                ? debate.rounds[currentRound].type.charAt(0).toUpperCase() + debate.rounds[currentRound].type.slice(1) 
+                                : 'Debate'}
                         </span>
                         <div style={{
                             padding: '8px 16px',
@@ -733,7 +760,7 @@ const Debate = () => {
                                     fontWeight: '700',
                                     color: '#059669'
                                 }}>
-                                    {messageCount.pro}/5 arguments
+                                    {messageCount.pro}/{totalMessages} arguments
                                 </span>
                             </div>
                             <div style={{ fontSize: '24px' }}>⚔️</div>
@@ -746,7 +773,7 @@ const Debate = () => {
                                     fontWeight: '700',
                                     color: '#dc2626'
                                 }}>
-                                    {messageCount.con}/5 arguments
+                                    {messageCount.con}/{totalMessages} arguments
                                 </span>
                                 <span style={{ fontSize: '13px', color: '#737373' }}>
                                     {debate.conTeam?.map(p => p.user?.username || 'Anonymous').join(', ')}
@@ -755,7 +782,7 @@ const Debate = () => {
                             </div>
                         </div>
                         <p style={{ textAlign: 'center', fontSize: '12px', color: '#737373', marginTop: '8px' }}>
-                            Debate ends after both sides submit 5 arguments. AI will judge all arguments at the end.
+                            Debate ends after both sides submit {totalMessages} arguments. AI will judge all arguments at the end.
                         </p>
                     </div>
 

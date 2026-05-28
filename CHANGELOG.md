@@ -6,17 +6,26 @@ This document summarizes the major architectural improvements, bug fixes, and ne
 
 ### AI Migration (Gemini to OpenAI)
 - **Swapped AI Providers:** Migrated the entire backend from `@google/genai` to the official `openai` SDK, utilizing `gpt-4o-mini` for faster, smarter, and more reliable responses.
-- **Batched Debate Evaluation:** Previously, the AI evaluated every single message sent during a debate. This was heavily token-intensive. We replaced this with a **batched analysis**, where the entire 5-round transcript is sent to the AI once at the end. 
+- **Batched Debate Evaluation:** Previously, the AI evaluated every single message sent during a debate. This was heavily token-intensive. We replaced this with a **batched analysis**, where the entire transcript is sent to the AI once at the end. 
 - **Smart Fallbacks:** Implemented a non-AI heuristic scoring system (`smartFallbackScore`) that calculates a winner based on vocabulary diversity and argument length in case the OpenAI API goes down or rate-limits.
 
-### Core Debate Mechanics
+### Core Debate Mechanics & Multiplayer Engine
 - **Anonymous Aliases:** Replaced generic random strings with a smart local alias generator (e.g., `ShadowNinja_422`) to provide a better user experience without wasting AI tokens.
-- **Team Turns Fixed:** Fixed a bug in 2v2 and 3v3 team debates where the turn system failed to rotate correctly among individual players.
+- **Dynamic Round System:** The debate engine now dynamically generates the correct number of rounds based on game mode. 
+  - **1v1:** Exactly 5 alternating turns (Opening -> Rebuttal -> Counter -> Rebuttal -> Closing).
+  - **2v2 / 3v3:** Team matches feature exactly 6 turns per side (3 rounds where each team member goes).
+- **Strict Team Baton-Passing:** Fixed the chaotic team logic. The backend now strictly enforces individual player rotation in 2v2s (e.g., `PRO 1 -> CON 1 -> PRO 2 -> CON 2`). The "Your Turn!" UI is exclusively shown to the exact player whose turn it is.
+- **Equal Team XP Payouts:** Rewrote `distributeXP` so that if a team wins a 2v2, the AI's total score is split, and all teammates receive the exact same XP reward.
 
 ## 🎨 2. UI / Frontend Enhancements
 
+### Stability & UX Fixes
+- **Modal Flickering Fixed:** Resolved a critical React infinite render loop where the 60-second `exitCountdown` state updates were causing the `ResultsModal` to flash aggressively upon match completion.
+- **Graceful Reconnects:** Removed the aggressive 60-second auto-draw logic that ruined matches if a single player hit "Refresh" or dropped connection for a moment. Players can now safely reconnect mid-match.
+- **Spectator UI Separation:** Spectators have their own dedicated UI (Live Chat, Emojis, Betting Pool) and are fully restricted from seeing or interacting with the Player Argument controls.
+- **Dynamic Round Names:** Removed hardcoded round arrays on the frontend. The UI now dynamically extracts and capitalizes the round type (`debate.rounds[currentRound].type`) directly from the backend socket payload.
+
 ### Rich AI Scorecard (ResultsModal)
-The `Debate.jsx` component was completely overhauled to visualize the rich JSON data returned by the new OpenAI judge. It now features:
 - **AI Judge's Verdict:** A clear, concise explanation of *why* the winning team won.
 - **Fact Checks:** A dedicated section that verifies factual claims made during the debate, tagging them as *True*, *Mostly True*, *False*, etc.
 - **PRO vs CON Feedback:** Side-by-side (Green/Red) UI cards detailing the specific **strengths** and **weaknesses** of the arguments presented by both sides.
