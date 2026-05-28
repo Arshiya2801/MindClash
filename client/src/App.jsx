@@ -11,6 +11,8 @@ import Debate from './pages/Debate';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import Marketplace from './pages/Marketplace';
+import Topics from './pages/Topics';
+import Communities from './pages/Communities';
 
 // Layout
 import Layout from './components/Layout';
@@ -52,6 +54,12 @@ function App() {
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/marketplace" element={
           <ProtectedRoute><Marketplace /></ProtectedRoute>
+        } />
+        <Route path="/topics" element={
+          <ProtectedRoute><Topics /></ProtectedRoute>
+        } />
+        <Route path="/communities" element={
+          <ProtectedRoute><Communities /></ProtectedRoute>
         } />
       </Route>
 

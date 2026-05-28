@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
     Home, Swords, Trophy, ShoppingBag, User, Menu, X, LogOut,
-    Zap
+    Zap, MessageSquare, Users
 } from 'lucide-react';
 import LevelUpModal from './LevelUpModal';
 
@@ -33,6 +33,8 @@ const Layout = () => {
     const navItems = [
         { path: '/dashboard', label: 'Home', icon: Home },
         { path: '/arena', label: 'Arena', icon: Swords },
+        { path: '/topics', label: 'Topics', icon: MessageSquare },
+        { path: '/communities', label: 'Communities', icon: Users },
         { path: '/leaderboard', label: 'Rankings', icon: Trophy },
         { path: '/marketplace', label: 'Shop', icon: ShoppingBag },
     ];
