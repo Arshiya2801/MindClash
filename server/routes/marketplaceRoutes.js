@@ -26,8 +26,23 @@ router.get('/', paginationValidation, async (req, res) => {
             newest: { createdAt: -1 },
         };
 
-        const items = await MarketplaceItem.find(query)
+        let items = await MarketplaceItem.find(query)
             .sort(sortOptions[sort] || { price: 1 });
+
+        // Auto-seed if database is empty
+        if (items.length === 0 && Object.keys(query).length === 1) {
+            const seedItems = [
+                { name: 'Golden Crown', itemId: 'crown_gold', type: 'avatar', rarity: 'legendary', price: 5000, description: 'For true champions!' },
+                { name: 'Fire Frame', itemId: 'frame_fire', type: 'frame', rarity: 'epic', price: 2500, description: 'Burn bright in debates' },
+                { name: 'Quick Thinker', itemId: 'badge_quick', type: 'badge', rarity: 'rare', price: 1000, description: 'Show your wit' },
+                { name: 'Time Boost', itemId: 'powerup_time', type: 'powerUp', rarity: 'common', price: 500, description: '+30 seconds in debates' },
+                { name: 'Neon Avatar', itemId: 'avatar_neon', type: 'avatar', rarity: 'epic', price: 3000, description: 'Glow in the dark' },
+                { name: 'Diamond Frame', itemId: 'frame_diamond', type: 'frame', rarity: 'legendary', price: 7500, description: 'Pure luxury' }
+            ];
+            await MarketplaceItem.insertMany(seedItems);
+            items = await MarketplaceItem.find(query)
+                .sort(sortOptions[sort] || { price: 1 });
+        }
 
         res.json({
             success: true,

@@ -115,6 +115,49 @@ const Profile = () => {
         { label: 'Best Streak', value: profile.bestStreak, icon: <Target size={20} />, color: '#f59e0b' },
     ];
 
+    const getAvatarEmoji = (avatarId, tierEmoji) => {
+        const map = {
+            'crown_gold': '👑',
+            'avatar_neon': '🌟',
+            'default_avatar': tierEmoji
+        };
+        return map[avatarId] || tierEmoji;
+    };
+
+    const getFrameStyle = (frameId) => {
+        const baseStyle = {
+            width: '100px',
+            height: '100px',
+            borderRadius: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '48px',
+        };
+
+        const map = {
+            'frame_fire': {
+                ...baseStyle,
+                background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                boxShadow: '0 0 20px rgba(239, 68, 68, 0.6)',
+                border: '3px solid #fca5a5'
+            },
+            'frame_diamond': {
+                ...baseStyle,
+                background: 'linear-gradient(135deg, #e0f2fe, #bae6fd)',
+                boxShadow: '0 0 25px rgba(56, 189, 248, 0.5)',
+                border: '4px solid #38bdf8'
+            },
+            'default_frame': {
+                ...baseStyle,
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
+            }
+        };
+
+        return map[frameId] || map['default_frame'];
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Profile Header */}
@@ -132,18 +175,8 @@ const Profile = () => {
                 }}>
                     {/* Avatar */}
                     <div style={{ position: 'relative' }}>
-                        <div style={{
-                            width: '100px',
-                            height: '100px',
-                            borderRadius: '24px',
-                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '48px',
-                            boxShadow: '0 8px 20px rgba(99,102,241,0.3)'
-                        }}>
-                            {tierConfig.emoji}
+                        <div style={getFrameStyle(profile.frame)}>
+                            {getAvatarEmoji(profile.avatar, tierConfig.emoji)}
                         </div>
                         <div style={{
                             position: 'absolute',

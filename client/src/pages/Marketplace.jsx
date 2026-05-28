@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { marketplaceAPI } from '../services/api';
+import { marketplaceAPI, userAPI } from '../services/api';
 import {
     ShoppingBag, Sparkles, Zap, Crown, Palette,
-    Frame, Award, Package, Star, Check
+    Frame, Award, Package, Star, Check, User
 } from 'lucide-react';
 
 const Marketplace = () => {
@@ -13,6 +13,8 @@ const Marketplace = () => {
     const [category, setCategory] = useState('all');
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState(null);
+    const [equipping, setEquipping] = useState(null);
+    const [activeTab, setActiveTab] = useState('shop'); // 'shop' | 'inventory'
 
     const categories = [
         { id: 'all', label: 'All Items', icon: <ShoppingBag size={16} /> },
@@ -33,13 +35,14 @@ const Marketplace = () => {
             setItems(res.data?.items || []);
         } catch (err) {
             console.error('Error fetching items:', err);
+            // Dummy fallback if API fails
             setItems([
-                { _id: '1', name: 'Golden Crown', type: 'avatar', rarity: 'legendary', price: 5000, description: 'For true champions!' },
-                { _id: '2', name: 'Fire Frame', type: 'frame', rarity: 'epic', price: 2500, description: 'Burn bright in debates' },
-                { _id: '3', name: 'Quick Thinker', type: 'badge', rarity: 'rare', price: 1000, description: 'Show your wit' },
-                { _id: '4', name: 'Time Boost', type: 'powerup', rarity: 'common', price: 500, description: '+30 seconds in debates' },
-                { _id: '5', name: 'Neon Avatar', type: 'avatar', rarity: 'epic', price: 3000, description: 'Glow in the dark' },
-                { _id: '6', name: 'Diamond Frame', type: 'frame', rarity: 'legendary', price: 7500, description: 'Pure luxury' },
+                { _id: '1', itemId: 'crown_gold', name: 'Golden Crown', type: 'avatar', rarity: 'legendary', price: 5000, description: 'For true champions!' },
+                { _id: '2', itemId: 'frame_fire', name: 'Fire Frame', type: 'frame', rarity: 'epic', price: 2500, description: 'Burn bright in debates' },
+                { _id: '3', itemId: 'badge_quick', name: 'Quick Thinker', type: 'badge', rarity: 'rare', price: 1000, description: 'Show your wit' },
+                { _id: '4', itemId: 'powerup_time', name: 'Time Boost', type: 'powerUp', rarity: 'common', price: 500, description: '+30 seconds in debates' },
+                { _id: '5', itemId: 'avatar_neon', name: 'Neon Avatar', type: 'avatar', rarity: 'epic', price: 3000, description: 'Glow in the dark' },
+                { _id: '6', itemId: 'frame_diamond', name: 'Diamond Frame', type: 'frame', rarity: 'legendary', price: 7500, description: 'Pure luxury' },
             ]);
         }
         setLoading(false);
@@ -53,14 +56,48 @@ const Marketplace = () => {
 
         setPurchasing(item._id);
         try {
-            await marketplaceAPI.purchase(item._id);
-            updateUser({ ...user, xp: user.xp - item.price });
+            const res = await marketplaceAPI.purchase(item._id);
+            // Update user inventory locally to avoid refetch
+            const updatedUser = { ...user, xp: user.xp - item.price };
+            if (item.type === 'avatar') updatedUser.ownedAvatars = [...(user.ownedAvatars || []), item.itemId];
+            if (item.type === 'frame') updatedUser.ownedFrames = [...(user.ownedFrames || []), item.itemId];
+            if (item.type === 'badge') updatedUser.ownedBadges = [...(user.ownedBadges || []), item.itemId];
+
+            updateUser(updatedUser);
             alert(`🎉 Purchased ${item.name}!`);
         } catch (err) {
             console.error('Purchase failed:', err);
-            alert('Purchase failed. Try again!');
+            alert(err.response?.data?.message || 'Purchase failed. Try again!');
         }
         setPurchasing(null);
+    };
+
+    const handleEquip = async (item) => {
+        setEquipping(item._id);
+        try {
+            const res = await userAPI.equipItem({ type: item.type, itemId: item.itemId });
+            if (res.data?.success) {
+                updateUser({ ...user, avatar: res.data.user.avatar, frame: res.data.user.frame });
+                alert(`Equipped ${item.name}!`);
+            }
+        } catch (err) {
+            console.error('Equip failed:', err);
+            alert(err.response?.data?.message || 'Equip failed.');
+        }
+        setEquipping(null);
+    };
+
+    const isOwned = (item) => {
+        if (item.type === 'avatar') return user?.ownedAvatars?.includes(item.itemId);
+        if (item.type === 'frame') return user?.ownedFrames?.includes(item.itemId);
+        if (item.type === 'badge') return user?.ownedBadges?.includes(item.itemId);
+        return false; // powerups are consumable
+    };
+
+    const isEquipped = (item) => {
+        if (item.type === 'avatar') return user?.avatar === item.itemId;
+        if (item.type === 'frame') return user?.frame === item.itemId;
+        return false;
     };
 
     const getRarityConfig = (rarity) => {
@@ -82,6 +119,11 @@ const Marketplace = () => {
         };
         return icons[type] || <Package size={28} />;
     };
+
+    // Filter items based on active tab
+    const displayItems = activeTab === 'shop'
+        ? items
+        : items.filter(item => isOwned(item) || item.type === 'powerup'); // Inventory only shows owned or consumables
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -105,10 +147,10 @@ const Marketplace = () => {
                             gap: '10px'
                         }}>
                             <ShoppingBag size={28} style={{ color: '#6366f1' }} />
-                            <span className="text-gradient">Marketplace</span>
+                            <span className="text-gradient">Marketplace & Inventory</span>
                         </h1>
                         <p style={{ color: '#737373', fontSize: '14px' }}>
-                            Spend your XP on cool stuff!
+                            Spend your XP or manage your collection!
                         </p>
                     </div>
                     <div style={{
@@ -128,6 +170,50 @@ const Marketplace = () => {
                             </p>
                         </div>
                     </div>
+                </div>
+
+                {/* Tabs Toggle */}
+                <div style={{ display: 'flex', gap: '16px', marginTop: '24px', borderBottom: '1px solid #e5e5e5', paddingBottom: '16px' }}>
+                    <button
+                        onClick={() => setActiveTab('shop')}
+                        style={{
+                            padding: '10px 24px',
+                            borderRadius: '12px',
+                            fontWeight: '600',
+                            fontSize: '15px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            border: 'none',
+                            background: activeTab === 'shop' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#f5f5f5',
+                            color: activeTab === 'shop' ? '#fff' : '#737373',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <ShoppingBag size={18} />
+                        Shop
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('inventory')}
+                        style={{
+                            padding: '10px 24px',
+                            borderRadius: '12px',
+                            fontWeight: '600',
+                            fontSize: '15px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            border: 'none',
+                            background: activeTab === 'inventory' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#f5f5f5',
+                            color: activeTab === 'inventory' ? '#fff' : '#737373',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <User size={18} />
+                        My Inventory
+                    </button>
                 </div>
             </div>
 
@@ -164,11 +250,14 @@ const Marketplace = () => {
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
                     <div className="spinner"></div>
                 </div>
-            ) : items.length > 0 ? (
+            ) : displayItems.length > 0 ? (
                 <div className="grid-3">
-                    {items.map((item, i) => {
+                    {displayItems.map((item, i) => {
                         const rarityConfig = getRarityConfig(item.rarity);
+                        const owned = isOwned(item);
+                        const equipped = isEquipped(item);
                         const canAfford = user?.xp >= item.price;
+                        const isEquippable = ['avatar', 'frame'].includes(item.type);
 
                         return (
                             <motion.div
@@ -179,9 +268,31 @@ const Marketplace = () => {
                                 className="glass-card"
                                 style={{
                                     textAlign: 'center',
-                                    borderTop: `3px solid ${rarityConfig.color}`
+                                    borderTop: `3px solid ${rarityConfig.color}`,
+                                    position: 'relative'
                                 }}
                             >
+                                {/* Equipped Badge */}
+                                {equipped && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '12px',
+                                        right: '12px',
+                                        background: '#10b981',
+                                        color: 'white',
+                                        padding: '4px 8px',
+                                        borderRadius: '8px',
+                                        fontSize: '10px',
+                                        fontWeight: '700',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        boxShadow: '0 2px 4px rgba(16,185,129,0.3)'
+                                    }}>
+                                        <Check size={12} /> EQUIPPED
+                                    </div>
+                                )}
+
                                 {/* Icon */}
                                 <div style={{
                                     width: '64px',
@@ -192,7 +303,8 @@ const Marketplace = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    margin: '0 auto 16px'
+                                    margin: '0 auto 16px',
+                                    marginTop: equipped ? '24px' : '0'
                                 }}>
                                     {getTypeIcon(item.type)}
                                 </div>
@@ -222,7 +334,7 @@ const Marketplace = () => {
                                     {item.description}
                                 </p>
 
-                                {/* Price & Buy */}
+                                {/* Price & Actions */}
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -236,27 +348,72 @@ const Marketplace = () => {
                                             {item.price}
                                         </span>
                                     </div>
-                                    <motion.button
-                                        onClick={() => handlePurchase(item)}
-                                        disabled={!canAfford || purchasing === item._id}
-                                        style={{
-                                            padding: '8px 16px',
-                                            borderRadius: '10px',
-                                            fontWeight: '500',
-                                            fontSize: '13px',
-                                            cursor: canAfford ? 'pointer' : 'not-allowed',
-                                            border: 'none',
-                                            background: canAfford ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#e5e5e5',
-                                            color: canAfford ? '#fff' : '#a3a3a3',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                        whileHover={canAfford ? { scale: 1.05 } : {}}
-                                        whileTap={canAfford ? { scale: 0.95 } : {}}
-                                    >
-                                        {purchasing === item._id ? (
-                                            <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
-                                        ) : canAfford ? 'Buy' : 'Need XP'}
-                                    </motion.button>
+
+                                    {/* Action Button */}
+                                    {activeTab === 'shop' && owned ? (
+                                        <button
+                                            disabled
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: '10px',
+                                                fontWeight: '600',
+                                                fontSize: '13px',
+                                                background: '#f3f4f6',
+                                                color: '#9ca3af',
+                                                border: '1px solid #e5e7eb',
+                                                cursor: 'not-allowed'
+                                            }}
+                                        >
+                                            Owned
+                                        </button>
+                                    ) : activeTab === 'shop' ? (
+                                        <motion.button
+                                            onClick={() => handlePurchase(item)}
+                                            disabled={!canAfford || purchasing === item._id}
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: '10px',
+                                                fontWeight: '500',
+                                                fontSize: '13px',
+                                                cursor: canAfford ? 'pointer' : 'not-allowed',
+                                                border: 'none',
+                                                background: canAfford ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#e5e5e5',
+                                                color: canAfford ? '#fff' : '#a3a3a3',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            whileHover={canAfford ? { scale: 1.05 } : {}}
+                                            whileTap={canAfford ? { scale: 0.95 } : {}}
+                                        >
+                                            {purchasing === item._id ? (
+                                                <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
+                                            ) : canAfford ? 'Buy' : 'Need XP'}
+                                        </motion.button>
+                                    ) : (
+                                        /* Inventory Tab Actions */
+                                        isEquippable && (
+                                            <motion.button
+                                                onClick={() => handleEquip(item)}
+                                                disabled={equipped || equipping === item._id}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    borderRadius: '10px',
+                                                    fontWeight: '600',
+                                                    fontSize: '13px',
+                                                    cursor: equipped ? 'not-allowed' : 'pointer',
+                                                    border: 'none',
+                                                    background: equipped ? '#f3f4f6' : '#10b981',
+                                                    color: equipped ? '#9ca3af' : '#fff',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                whileHover={!equipped ? { scale: 1.05 } : {}}
+                                                whileTap={!equipped ? { scale: 0.95 } : {}}
+                                            >
+                                                {equipping === item._id ? (
+                                                    <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
+                                                ) : equipped ? 'Equipped' : 'Equip'}
+                                            </motion.button>
+                                        )
+                                    )}
                                 </div>
                             </motion.div>
                         );
@@ -264,12 +421,12 @@ const Marketplace = () => {
                 </div>
             ) : (
                 <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🛒</div>
+                    <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>{activeTab === 'shop' ? '🛒' : '🎒'}</div>
                     <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#171717', marginBottom: '8px' }}>
-                        No Items Available
+                        {activeTab === 'shop' ? 'No Items Available' : 'Your Inventory is Empty'}
                     </h3>
                     <p style={{ fontSize: '14px', color: '#737373' }}>
-                        Check back soon for new items!
+                        {activeTab === 'shop' ? 'Check back soon for new items!' : 'Go to the Shop to buy some items!'}
                     </p>
                 </div>
             )}
@@ -278,3 +435,4 @@ const Marketplace = () => {
 };
 
 export default Marketplace;
+

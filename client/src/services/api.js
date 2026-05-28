@@ -48,6 +48,7 @@ export const userAPI = {
     unfollow: (userId) => api.delete(`/users/follow/${userId}`),
     getDebates: (userId, page = 1) => api.get(`/users/${userId}/debates?page=${page}`),
     search: (query) => api.get(`/users/search?q=${query}`),
+    equipItem: (data) => api.put('/users/equip', data),
 };
 
 // Debate API

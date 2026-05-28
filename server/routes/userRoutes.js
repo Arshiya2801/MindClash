@@ -277,4 +277,70 @@ router.get('/search', async (req, res) => {
     }
 });
 
+/**
+ * @route   PUT /api/users/equip
+ * @desc    Equip an owned item (avatar, frame, etc.)
+ * @access  Private
+ */
+router.put('/equip', protect, async (req, res) => {
+    try {
+        const { type, itemId } = req.body;
+
+        if (!type || !itemId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Type and itemId are required',
+            });
+        }
+
+        const validTypes = ['avatar', 'frame'];
+        if (!validTypes.includes(type)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid equipment type',
+            });
+        }
+
+        const inventoryField = type === 'avatar' ? 'ownedAvatars' : 'ownedFrames';
+
+        // Ensure the user actually owns the item, or it's a default item
+        const isDefault = (type === 'avatar' && itemId === 'default_avatar') ||
+                          (type === 'frame' && itemId === 'default_frame');
+
+        if (!isDefault && (!req.user[inventoryField] || !req.user[inventoryField].includes(itemId))) {
+            return res.status(403).json({
+                success: false,
+                message: `You do not own this ${type}`,
+            });
+        }
+
+        // Update user
+        const updateField = type === 'avatar' ? 'avatar' : 'frame';
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { [updateField]: itemId },
+            { new: true }
+        ).select('-password -email -blockedUsers -settings');
+
+        res.json({
+            success: true,
+            message: `${type.charAt(0).toUpperCase() + type.slice(1)} equipped successfully`,
+            user: {
+                id: user._id,
+                username: user.username,
+                avatar: user.avatar,
+                frame: user.frame,
+                ownedAvatars: user.ownedAvatars,
+                ownedFrames: user.ownedFrames
+            }
+        });
+    } catch (error) {
+        console.error('Equip item error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+        });
+    }
+});
+
 export default router;
