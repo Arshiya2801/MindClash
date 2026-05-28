@@ -15,20 +15,34 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchTopics = async () => {
             try {
-                const [debatesRes, topicsRes] = await Promise.all([
-                    debateAPI.getLive().catch(() => ({ data: { debates: [] } })),
-                    topicAPI.getTrending().catch(() => ({ data: { topics: [] } })),
-                ]);
-                setLiveDebates(debatesRes.data?.debates || []);
+                const topicsRes = await topicAPI.getTrending().catch(() => ({ data: { topics: [] } }));
                 setTrendingTopics(topicsRes.data?.topics || []);
             } catch (err) {
-                console.error('Error fetching data:', err);
+                console.error('Error fetching topics:', err);
             }
+        };
+
+        const fetchDebates = async () => {
+            try {
+                const debatesRes = await debateAPI.getLive().catch(() => ({ data: { debates: [] } }));
+                setLiveDebates(debatesRes.data?.debates || []);
+            } catch (err) {
+                console.error('Error fetching debates:', err);
+            }
+        };
+
+        const init = async () => {
+            await Promise.all([fetchTopics(), fetchDebates()]);
             setLoading(false);
         };
-        fetchData();
+
+        init();
+
+        // Setup polling for live debates every 10 seconds to auto-remove finished ones
+        const interval = setInterval(fetchDebates, 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const stats = [

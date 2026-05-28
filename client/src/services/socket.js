@@ -9,7 +9,9 @@ const SOCKET_URL = import.meta.env.VITE_API_URL
 let socket = null;
 
 export const connectSocket = (token) => {
-    if (socket?.connected) return socket;
+    // If a socket already exists (connected OR still connecting), reuse it.
+    // This prevents React Strict Mode from creating duplicate sockets.
+    if (socket) return socket;
 
     socket = io(SOCKET_URL, {
         auth: { token },
