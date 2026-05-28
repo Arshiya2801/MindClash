@@ -39,16 +39,16 @@ const Leaderboard = () => {
     ];
 
     const getRankStyle = (rank) => {
-        if (rank === 1) return { border: 'var(--accent-amber)', bg: 'rgba(255, 184, 0, 0.15)', shadow: '0 0 40px rgba(255, 184, 0, 0.4)' };
-        if (rank === 2) return { border: 'var(--accent-blue)', bg: 'rgba(0, 240, 255, 0.1)', shadow: '0 0 30px rgba(0, 240, 255, 0.3)' };
-        if (rank === 3) return { border: 'var(--primary-500)', bg: 'rgba(255, 70, 85, 0.1)', shadow: '0 0 20px rgba(255, 70, 85, 0.2)' };
-        return { border: 'var(--gray-700)', bg: 'var(--bg-secondary)', shadow: 'none' };
+        if (rank === 1) return { border: 'var(--accent-amber)', bg: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)', shadow: 'var(--shadow-card)' };
+        if (rank === 2) return { border: 'var(--gray-300)', bg: 'color-mix(in srgb, var(--gray-300) 10%, transparent)', shadow: 'var(--shadow-card)' };
+        if (rank === 3) return { border: 'var(--primary-500)', bg: 'color-mix(in srgb, var(--primary-500) 10%, transparent)', shadow: 'var(--shadow-card)' };
+        return { border: 'var(--border-card)', bg: 'var(--bg-card)', shadow: 'var(--shadow-sm)' };
     };
 
     const getRankIcon = (rank) => {
-        if (rank === 1) return <Crown size={32} style={{ color: 'var(--accent-amber)', filter: 'drop-shadow(0 0 10px var(--accent-amber))' }} />;
-        if (rank === 2) return <Medal size={28} style={{ color: 'var(--accent-blue)', filter: 'drop-shadow(0 0 10px var(--accent-blue))' }} />;
-        if (rank === 3) return <Medal size={28} style={{ color: 'var(--primary-500)', filter: 'drop-shadow(0 0 10px var(--primary-500))' }} />;
+        if (rank === 1) return <Crown size={32} style={{ color: 'var(--accent-amber)' }} />;
+        if (rank === 2) return <Medal size={28} style={{ color: 'var(--gray-300)' }} />;
+        if (rank === 3) return <Medal size={28} style={{ color: 'var(--primary-500)' }} />;
         return <span style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-muted)', fontFamily: "'Oswald', sans-serif" }}>#{rank}</span>;
     };
 
@@ -117,7 +117,7 @@ const Leaderboard = () => {
             </div>
 
             {/* Leaderboard Elite Cards */}
-            <div className="arena-card" style={{ padding: '32px', background: 'rgba(0,0,0,0.2)' }}>
+            <div className="arena-card" style={{ padding: '32px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-card)' }}>
                 {loading ? (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '64px' }}>
                         <div style={{ color: 'var(--accent-amber)' }}><Trophy size={48} className="pulse-element" style={{ opacity: 0.5 }} /></div>
@@ -175,7 +175,7 @@ const Leaderboard = () => {
                                                 letterSpacing: '1px',
                                                 display: 'block',
                                                 marginBottom: '4px',
-                                                textShadow: isTop3 ? `0 0 10px ${style.border}` : 'none'
+                                                textShadow: 'none'
                                             }}
                                         >
                                             {user.username || user.anonymousAlias}
@@ -199,7 +199,7 @@ const Leaderboard = () => {
                                                 fontWeight: '700', 
                                                 color: 'var(--text-primary)',
                                                 fontFamily: "'Oswald', sans-serif",
-                                                textShadow: isTop3 ? `0 0 15px ${style.border}` : 'none'
+                                                textShadow: 'none'
                                             }}>
                                                 {(user.xp || user.reputation || 0).toLocaleString()}
                                             </span>

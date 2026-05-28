@@ -59,7 +59,7 @@ const Layout = () => {
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
             {/* Header */}
-            <header className="navbar" style={{ padding: '16px 24px', background: 'rgba(15, 25, 35, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)' }}>
+            <header className="navbar" style={{ padding: '16px 24px', background: 'var(--bg-nav)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border-card)', boxShadow: 'var(--shadow-xs)', position: 'sticky', top: 0, zIndex: 100 }}>
                 <div style={{
                     maxWidth: '1400px',
                     margin: '0 auto',
@@ -81,9 +81,9 @@ const Layout = () => {
                                 justifyContent: 'center',
                                 boxShadow: '0 0 15px rgba(255, 70, 85, 0.4)'
                             }}>
-                                <span style={{ fontSize: '16px', fontWeight: '700', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
+                                <span style={{ fontSize: '18px', fontWeight: '700', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
                             </div>
-                            <span style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '2px' }}>MindClash</span>
+                            <span style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '1px' }}>MindClash</span>
                         </Link>
                     </div>
 
@@ -133,13 +133,14 @@ const Layout = () => {
                                 alignItems: 'center',
                                 gap: '10px',
                                 padding: '6px 12px',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'var(--bg-tertiary)',
+                                border: '1px solid var(--border-card)',
                                 textDecoration: 'none',
-                                transition: 'all 0.3s ease'
+                                transition: 'all 0.3s ease',
+                                borderRadius: '50px'
                             }}
-                            onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'rgba(255,70,85,0.05)' }}
-                            onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                            onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'color-mix(in srgb, var(--primary-500) 5%, transparent)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-card)'; e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
                         >
                             <div className="avatar" style={{ width: '32px', height: '32px', fontSize: '14px' }}>
                                 {user?.username?.charAt(0).toUpperCase() || 'U'}

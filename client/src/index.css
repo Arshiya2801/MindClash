@@ -46,6 +46,11 @@
   --text-muted: var(--gray-400);
   --text-dark: var(--gray-900);
 
+  /* Component Dynamic Variables (Dark Mode Default) */
+  --bg-nav: rgba(15, 25, 35, 0.9);
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --border-card: rgba(255, 255, 255, 0.05);
+
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #ff4655, #be123c);
   --gradient-dark: linear-gradient(135deg, #1f2326, #111111);
@@ -94,6 +99,11 @@
   --shadow-md: 6px 6px 0px rgba(255, 70, 85, 0.1);
   --shadow-lg: 8px 8px 0px rgba(255, 70, 85, 0.15);
   --shadow-xl: 12px 12px 0px rgba(0, 0, 0, 0.1);
+
+  /* Component Dynamic Variables (Light Mode) */
+  --bg-nav: rgba(255, 255, 255, 0.85);
+  --shadow-card: 0 15px 35px rgba(0, 0, 0, 0.08);
+  --border-card: rgba(0, 0, 0, 0.08);
 
   /* Adjust Accents for Light Mode Visibility */
   --accent-blue: #0284c7;

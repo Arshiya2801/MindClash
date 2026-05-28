@@ -196,30 +196,32 @@ const Communities = () => {
                                 className="arena-card"
                                 style={{ 
                                     padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', 
-                                    borderTop: `4px solid ${factionColor}`, position: 'relative', overflow: 'hidden'
+                                    borderTop: `4px solid ${factionColor}`, position: 'relative', overflow: 'hidden',
+                                    background: 'var(--bg-card)',
+                                    boxShadow: 'var(--shadow-card)'
                                 }}
-                                whileHover={{ scale: 1.03, y: -5, borderColor: factionColor, boxShadow: `0 15px 40px color-mix(in srgb, ${factionColor} 30%, transparent)` }}
+                                whileHover={{ scale: 1.03, y: -5, borderColor: factionColor, boxShadow: `0 20px 40px color-mix(in srgb, ${factionColor} 20%, transparent)` }}
                             >
                                 {/* Faction Hologram Glow */}
                                 <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: `radial-gradient(circle at top right, color-mix(in srgb, ${factionColor} 20%, transparent), transparent 70%)`, pointerEvents: 'none' }} />
                                 
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
                                     <div style={{
-                                        width: '64px', height: '64px', background: `color-mix(in srgb, ${factionColor} 15%, transparent)`, color: factionColor, 
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold',
-                                        border: `1px solid color-mix(in srgb, ${factionColor} 50%, transparent)`, clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
-                                        fontFamily: "'Oswald', sans-serif"
+                                        width: '56px', height: '56px', background: `color-mix(in srgb, ${factionColor} 10%, transparent)`, color: factionColor, 
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold',
+                                        borderRadius: '16px', border: `1px solid color-mix(in srgb, ${factionColor} 30%, transparent)`,
+                                        fontFamily: "'Inter', sans-serif", boxShadow: `0 8px 20px color-mix(in srgb, ${factionColor} 15%, transparent)`
                                     }}>
                                         {comm.avatar || comm.name.charAt(0)}
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <h3 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px', lineHeight: 1.2 }}>{comm.name}</h3>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                            <span style={{ fontSize: '11px', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '2px 8px', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>
+                                            <span style={{ fontSize: '11px', color: 'var(--text-primary)', background: 'var(--bg-tertiary)', border: '1px solid var(--border-card)', padding: '2px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>
                                                 <Users size={10} /> {comm.memberCount} PERSONNEL
                                             </span>
                                             {comm.isPrivate && (
-                                                <span style={{ fontSize: '11px', color: 'var(--primary-500)', background: 'rgba(255,70,85,0.1)', border: '1px solid var(--primary-500)', padding: '2px 8px', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>
+                                                <span style={{ fontSize: '11px', color: 'var(--primary-500)', background: 'color-mix(in srgb, var(--primary-500) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--primary-500) 40%, transparent)', borderRadius: '4px', padding: '2px 8px', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>
                                                     <Shield size={10} /> RESTRICTED
                                                 </span>
                                             )}

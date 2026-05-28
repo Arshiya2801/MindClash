@@ -102,10 +102,10 @@ const Marketplace = () => {
 
     const getRarityConfig = (rarity) => {
         const configs = {
-            common: { label: 'COMMON', color: 'var(--text-muted)', border: 'var(--gray-600)', bg: 'var(--bg-secondary)', shadow: 'none', glow: 'none' },
-            rare: { label: 'RARE', color: 'var(--accent-blue)', border: 'var(--accent-blue)', bg: 'rgba(0, 240, 255, 0.05)', shadow: '0 0 20px rgba(0, 240, 255, 0.2)', glow: '0 0 10px var(--accent-blue)' },
-            epic: { label: 'EPIC', color: 'var(--accent-purple)', border: 'var(--accent-purple)', bg: 'rgba(139, 92, 246, 0.1)', shadow: '0 0 30px rgba(139, 92, 246, 0.3)', glow: '0 0 15px var(--accent-purple)' },
-            legendary: { label: 'LEGENDARY', color: 'var(--accent-amber)', border: 'var(--accent-amber)', bg: 'rgba(255, 184, 0, 0.15)', shadow: '0 0 50px rgba(255, 184, 0, 0.5)', glow: '0 0 20px var(--accent-amber)' },
+            common: { label: 'COMMON', color: 'var(--text-muted)', border: 'var(--gray-600)', bg: 'var(--bg-secondary)', shadow: 'var(--shadow-sm)', glow: 'none' },
+            rare: { label: 'RARE', color: 'var(--accent-blue)', border: 'var(--accent-blue)', bg: 'color-mix(in srgb, var(--accent-blue) 5%, transparent)', shadow: 'var(--shadow-card)', glow: 'none' },
+            epic: { label: 'EPIC', color: 'var(--accent-purple)', border: 'var(--accent-purple)', bg: 'color-mix(in srgb, var(--accent-purple) 10%, transparent)', shadow: 'var(--shadow-card)', glow: 'none' },
+            legendary: { label: 'LEGENDARY', color: 'var(--accent-amber)', border: 'var(--accent-amber)', bg: 'color-mix(in srgb, var(--accent-amber) 15%, transparent)', shadow: 'var(--shadow-card)', glow: 'none' },
         };
         return configs[rarity?.toLowerCase()] || configs.common;
     };
@@ -118,7 +118,7 @@ const Marketplace = () => {
             powerup: <Battery size={48} />,
         };
         return (
-            <div style={{ color: rarityColor, filter: `drop-shadow(0 0 10px ${rarityColor})` }}>
+            <div style={{ color: rarityColor }}>
                 {icons[type] || <Package size={48} />}
             </div>
         );
@@ -149,25 +149,28 @@ const Marketplace = () => {
                         </p>
                     </div>
 
-                    {/* Animated XP Wallet */}
+                    {/* Premium Floating XP Wallet */}
                     <div className="arena-card" style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '20px',
+                        gap: '24px',
                         padding: '24px 32px',
-                        background: 'rgba(0,0,0,0.4)',
-                        border: '1px solid var(--accent-amber)',
-                        boxShadow: 'inset 0 0 20px rgba(255,184,0,0.1), 0 0 30px rgba(255,184,0,0.2)'
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-card)',
+                        boxShadow: 'var(--shadow-card)',
+                        position: 'relative',
+                        overflow: 'hidden'
                     }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, var(--accent-amber), var(--accent-emerald))' }} />
                         <div className="pulse-element" style={{
-                            width: '50px', height: '50px', background: 'rgba(255,184,0,0.1)', border: '1px solid var(--accent-amber)', color: 'var(--accent-amber)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
+                            width: '56px', height: '56px', background: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent)', color: 'var(--accent-amber)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '16px', boxShadow: '0 8px 20px color-mix(in srgb, var(--accent-amber) 15%, transparent)'
                         }}>
                             <Zap size={24} style={{ filter: 'drop-shadow(0 0 5px var(--accent-amber))' }} />
                         </div>
                         <div>
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', marginBottom: '4px' }}>AVAILABLE FUNDS</p>
-                            <p style={{ fontSize: '32px', fontWeight: '700', color: 'var(--accent-amber)', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', lineHeight: 1, textShadow: '0 0 15px rgba(255,184,0,0.5)' }}>
+                            <p style={{ fontSize: '32px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px', lineHeight: 1, textShadow: 'none' }}>
                                 {(user?.xp || 0).toLocaleString()} <span style={{ fontSize: '16px', color: 'var(--text-muted)' }}>XP</span>
                             </p>
                         </div>
@@ -256,8 +259,8 @@ const Marketplace = () => {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         height: '100%',
-                                        border: `1px solid ${rarity.border}`,
-                                        background: 'var(--bg-secondary)',
+                                        border: `1px solid var(--border-card)`,
+                                        background: 'var(--bg-card)',
                                         position: 'relative',
                                         overflow: 'hidden'
                                     }}
