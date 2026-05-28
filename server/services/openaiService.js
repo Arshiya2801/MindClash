@@ -91,6 +91,7 @@ Return this exact JSON structure:
 }
 
 Rules:
+- If a side's text is "No arguments submitted.", DO NOT invent arguments for them. Their score must be 0, their strengths must be empty, and their weakness must be "Did not participate."
 - moderationFlags: only flag genuinely toxic, hateful, or rule-breaking content. Leave empty [] if all is fine.
 - factChecks: only check verifiable factual claims. Max 3 checks. Leave [] if no factual claims.
 - highlights: 1-2 standout moments from the debate.`;
@@ -225,8 +226,24 @@ export const smartFallbackScore = (proArgs, conArgs) => {
 
     const proFallback = proArgs.length > 0 ? analyze(proArgs) : 0;
     const conFallback = conArgs.length > 0 ? analyze(conArgs) : 0;
-    const total = proFallback + conFallback || 1;
+    
+    if (proFallback === 0 && conFallback === 0) {
+        return {
+            winner: 'draw',
+            proScore: 0,
+            conScore: 0,
+            reasoning: 'Neither side submitted any arguments. The debate is a draw.',
+            feedback: { 
+                pro: { strengths: [], weaknesses: ['Did not participate.'] }, 
+                con: { strengths: [], weaknesses: ['Did not participate.'] } 
+            },
+            factChecks: [],
+            moderationFlags: [],
+            highlights: []
+        };
+    }
 
+    const total = proFallback + conFallback || 1;
     const proScore = Math.round((proFallback / total) * 100);
     const conScore = 100 - proScore;
     const diff = proScore - conScore;
@@ -235,7 +252,7 @@ export const smartFallbackScore = (proArgs, conArgs) => {
         winner: diff >= 5 ? 'pro' : diff <= -5 ? 'con' : 'draw',
         proScore,
         conScore,
-        reasoning: 'Scored by argument length and vocabulary diversity (AI unavailable).',
+        reasoning: 'Scored by heuristic analysis (AI unavailable).',
         feedback: { pro: { strengths: [], weaknesses: [] }, con: { strengths: [], weaknesses: [] } },
         factChecks: [],
         moderationFlags: [],

@@ -80,7 +80,7 @@ const debateSchema = new mongoose.Schema({
         description: String,
         category: {
             type: String,
-            enum: ['Politics', 'Technology', 'Sports', 'Philosophy', 'Science', 'Entertainment', 'Economy', 'Social', 'Other'],
+            enum: ['Politics', 'Technology', 'Sports', 'Philosophy', 'Science', 'Entertainment', 'Economy', 'Social', 'General', 'Other'],
             default: 'Other',
         },
     },

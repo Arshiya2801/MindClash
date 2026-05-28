@@ -120,7 +120,7 @@ const Debate = () => {
             if (role !== 'spectator') {
                 if (debate.currentTurn) {
                     const currentTurnId = debate.currentTurn._id || debate.currentTurn;
-                    setIsMyTurn(currentTurnId.toString() === user._id.toString());
+                    setIsMyTurn(currentTurnId.toString() === (user.id || user._id).toString());
                 } else {
                     setIsMyTurn(debate.currentSide === role);
                 }
@@ -141,7 +141,7 @@ const Debate = () => {
             if (myRoleRef.current && myRoleRef.current !== 'spectator') {
                 if (nextTurnUser) {
                     const nextTurnUserId = nextTurnUser._id || nextTurnUser;
-                    setIsMyTurn(nextTurnUserId.toString() === user._id.toString());
+                    setIsMyTurn(nextTurnUserId.toString() === (user.id || user._id).toString());
                 } else {
                     setIsMyTurn(nextTurn === myRoleRef.current);
                 }
@@ -155,7 +155,7 @@ const Debate = () => {
             if (myRoleRef.current && myRoleRef.current !== 'spectator') {
                 if (data.nextTurnUser) {
                     const nextTurnUserId = data.nextTurnUser._id || data.nextTurnUser;
-                    setIsMyTurn(nextTurnUserId.toString() === user._id.toString());
+                    setIsMyTurn(nextTurnUserId.toString() === (user.id || user._id).toString());
                 } else {
                     setIsMyTurn(data.side === myRoleRef.current);
                 }
@@ -169,7 +169,7 @@ const Debate = () => {
             if (myRoleRef.current && myRoleRef.current !== 'spectator') {
                 if (data.nextTurnUser) {
                     const nextTurnUserId = data.nextTurnUser._id || data.nextTurnUser;
-                    setIsMyTurn(nextTurnUserId.toString() === user._id.toString());
+                    setIsMyTurn(nextTurnUserId.toString() === (user.id || user._id).toString());
                 } else {
                     setIsMyTurn(data.side === myRoleRef.current);
                 }

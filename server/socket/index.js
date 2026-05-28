@@ -496,7 +496,12 @@ async function createDebate(players, type) {
         { title: 'Should smartphones be banned in schools?', description: 'The impact of phones on student learning.', category: 'Social' },
     ];
 
-    const topicData = FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)];
+    let topicData;
+    try {
+        topicData = await openaiService.generateTopic();
+    } catch (err) {
+        topicData = FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)];
+    }
 
     const half    = players.length / 2;
     const proTeam = players.slice(0, half).map(p => ({
@@ -523,9 +528,12 @@ async function createDebate(players, type) {
             { roundNumber: 3, type: 'closing',  duration: 60,  messages: [] },
         ];
 
+    const validCategories = ['Politics', 'Technology', 'Sports', 'Philosophy', 'Science', 'Entertainment', 'Economy', 'Social', 'General', 'Other'];
+    const finalCategory = validCategories.includes(topicData.category) ? topicData.category : 'Other';
+
     const debate = await Debate.create({
         type,
-        topic: { title: topicData.title, description: topicData.description, category: topicData.category },
+        topic: { title: topicData.title, description: topicData.description, category: finalCategory },
         proTeam,
         conTeam,
         rounds,
@@ -564,14 +572,16 @@ async function finishDebate(io, debate) {
 
     // Single AI call — covers scoring, fact-checking, moderation, feedback
     let analysis = null;
-    try {
-        analysis = await openaiService.analyzeDebateBatch(
-            debate.topic.title,
-            proMessages.map((m, i) => ({ index: i + 1, content: m.content })),
-            conMessages.map((m, i) => ({ index: i + 1, content: m.content }))
-        );
-    } catch (err) {
-        console.error('Batch AI failed:', err.message);
+    if (proMessages.length > 0 || conMessages.length > 0) {
+        try {
+            analysis = await openaiService.analyzeDebateBatch(
+                debate.topic.title,
+                proMessages.map((m, i) => ({ index: i + 1, content: m.content })),
+                conMessages.map((m, i) => ({ index: i + 1, content: m.content }))
+            );
+        } catch (err) {
+            console.error('Batch AI failed:', err.message);
+        }
     }
 
     // If AI failed, use heuristic fallback
