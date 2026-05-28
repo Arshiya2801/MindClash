@@ -1,10 +1,6 @@
 # MindClash 
 
-MindClash is an AI-powered real-time debate platform that enables users to participate in structured 1v1, 2v2, and 3v3 debates with intelligent moderation, live communication, and detailed AI-generated evaluations.  
-
-The platform combines real-time multiplayer interaction with AI-driven analysis to create an engaging environment for practicing argumentation, critical thinking, and communication skills.
-
----
+MindClash is a real-time, AI-powered debate platform where users can engage in intellectual battles, spectate matches, and earn XP. It features an integrated OpenAI moderator to evaluate arguments objectively and score debates live.
 
 ## 🚀 Features
 

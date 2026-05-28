@@ -55,16 +55,9 @@ const Layout = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: '#fafafa' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
             {/* Header */}
-            <header style={{
-                background: '#fff',
-                borderBottom: '1px solid #e5e5e5',
-                padding: '12px 24px',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100
-            }}>
+            <header className="navbar">
                 <div style={{
                     maxWidth: '1200px',
                     margin: '0 auto',
@@ -78,37 +71,23 @@ const Layout = () => {
                             <div style={{
                                 width: '36px',
                                 height: '36px',
-                                borderRadius: '10px',
-                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                background: 'var(--primary-500)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>DV</span>
+                                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
                             </div>
-                            <span style={{ fontSize: '18px', fontWeight: '700', color: '#171717' }}>DebateVerse</span>
+                            <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--gray-50)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '1px' }}>MindClash</span>
                         </Link>
 
                         {/* Desktop Nav */}
-                        <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }} className="hidden-mobile">
+                        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }} className="hidden-mobile">
                             {navItems.map((item) => (
                                 <Link
                                     key={item.path}
                                     to={item.path}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '8px 14px',
-                                        borderRadius: '10px',
-                                        fontSize: '14px',
-                                        fontWeight: '500',
-                                        textDecoration: 'none',
-                                        background: isActive(item.path) ? '#f5f5f5' : 'transparent',
-                                        color: isActive(item.path) ? '#171717' : '#737373',
-                                        border: isActive(item.path) ? '1px solid #e5e5e5' : '1px solid transparent',
-                                        transition: 'all 0.2s ease'
-                                    }}
+                                    className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
                                 >
                                     <item.icon style={{ width: '16px', height: '16px' }} />
                                     {item.label}
@@ -120,18 +99,7 @@ const Layout = () => {
                     {/* Right Side */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {/* XP Display */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '8px 14px',
-                            borderRadius: '50px',
-                            background: '#fffbeb',
-                            border: '1px solid #fcd34d',
-                            fontWeight: '600',
-                            fontSize: '14px',
-                            color: '#f59e0b'
-                        }}>
+                        <div className="xp-display">
                             <Zap style={{ width: '16px', height: '16px' }} />
                             <span>{user?.xp?.toLocaleString() || 0}</span>
                         </div>
@@ -144,32 +112,20 @@ const Layout = () => {
                                 alignItems: 'center',
                                 gap: '10px',
                                 padding: '8px 14px',
-                                borderRadius: '12px',
-                                background: '#fff',
-                                border: '1px solid #e5e5e5',
+                                background: 'var(--gray-800)',
+                                border: '1px solid var(--gray-600)',
                                 textDecoration: 'none',
                                 transition: 'all 0.2s ease'
                             }}
                         >
-                            <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#fff',
-                                fontWeight: '600',
-                                fontSize: '13px'
-                            }}>
+                            <div className="avatar">
                                 {user?.username?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             <div className="hidden-mobile">
-                                <span style={{ display: 'block', fontWeight: '500', color: '#171717', fontSize: '14px' }}>
+                                <span style={{ display: 'block', fontWeight: '700', fontFamily: "'Oswald', sans-serif", letterSpacing: '0.5px', color: 'var(--gray-50)', fontSize: '14px', textTransform: 'uppercase' }}>
                                     {user?.username}
                                 </span>
-                                <span style={{ display: 'block', fontSize: '11px', color: getTierColor(user?.tier) }}>
+                                <span style={{ display: 'block', fontSize: '11px', color: getTierColor(user?.tier), fontWeight: '700', textTransform: 'uppercase' }}>
                                     {user?.tier || 'Novice'}
                                 </span>
                             </div>
@@ -180,14 +136,18 @@ const Layout = () => {
                             onClick={logout}
                             style={{
                                 padding: '8px',
-                                borderRadius: '8px',
-                                background: 'transparent',
-                                border: 'none',
+                                background: 'var(--gray-800)',
+                                border: '1px solid var(--gray-600)',
                                 cursor: 'pointer',
-                                color: '#a3a3a3',
-                                transition: 'all 0.2s ease'
+                                color: 'var(--gray-300)',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                             }}
                             title="Logout"
+                            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; e.currentTarget.style.borderColor = 'var(--primary-500)' }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.borderColor = 'var(--gray-600)' }}
                         >
                             <LogOut style={{ width: '18px', height: '18px' }} />
                         </button>
@@ -222,8 +182,8 @@ const Layout = () => {
                         exit={{ opacity: 0, y: -10 }}
                         className="hidden-desktop"
                         style={{
-                            background: '#fff',
-                            borderBottom: '1px solid #e5e5e5',
+                            background: 'var(--gray-900)',
+                            borderBottom: '1px solid var(--gray-700)',
                             padding: '16px 24px'
                         }}
                     >

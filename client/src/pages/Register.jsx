@@ -84,7 +84,7 @@ const Register = () => {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '48px 16px',
-            background: '#fafafa'
+            background: 'var(--bg-primary)'
         }}>
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -109,19 +109,19 @@ const Register = () => {
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>DV</span>
+                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>MC</span>
                     </div>
-                    <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#171717' }}>DebateVerse</span>
+                    <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#171717', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>MindClash</span>
                 </Link>
 
                 {/* Card */}
-                <div className="glass-card" style={{ padding: '32px' }}>
+                <div className="arena-card">
                     <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#171717', marginBottom: '8px' }}>
-                            Create your account
+                        <h1 style={{ fontSize: '28px', fontFamily: "'Oswald', sans-serif", fontWeight: '700', color: 'var(--gray-50)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                            Create an account
                         </h1>
-                        <p style={{ fontSize: '14px', color: '#737373' }}>
-                            Join DebateVerse and start debating
+                        <p style={{ fontSize: '15px', color: 'var(--gray-300)' }}>
+                            Join the arena and start debating
                         </p>
                     </div>
 
@@ -253,11 +253,11 @@ const Register = () => {
                     <p style={{
                         textAlign: 'center',
                         marginTop: '24px',
-                        color: '#737373',
+                        color: 'var(--gray-300)',
                         fontSize: '14px'
                     }}>
                         Already have an account?{' '}
-                        <Link to="/login" style={{ color: '#6366f1', fontWeight: '500', textDecoration: 'none' }}>
+                        <Link to="/login" style={{ color: 'var(--primary-500)', fontWeight: '700', textDecoration: 'none', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>
                             Sign in
                         </Link>
                     </p>

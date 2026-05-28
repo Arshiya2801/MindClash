@@ -30,7 +30,7 @@ const Login = () => {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '48px 16px',
-            background: '#fafafa'
+            background: 'var(--bg-primary)'
         }}>
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -55,18 +55,18 @@ const Login = () => {
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>DV</span>
+                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>MC</span>
                     </div>
-                    <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#171717' }}>DebateVerse</span>
+                    <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#171717', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>MindClash</span>
                 </Link>
 
                 {/* Card */}
-                <div className="glass-card" style={{ padding: '32px' }}>
+                <div className="arena-card">
                     <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#171717', marginBottom: '8px' }}>
+                        <h1 style={{ fontSize: '28px', fontFamily: "'Oswald', sans-serif", fontWeight: '700', color: 'var(--gray-50)', marginBottom: '8px', textTransform: 'uppercase' }}>
                             Welcome back
                         </h1>
-                        <p style={{ fontSize: '14px', color: '#737373' }}>
+                        <p style={{ fontSize: '15px', color: 'var(--gray-300)' }}>
                             Sign in to continue to your account
                         </p>
                     </div>
@@ -95,8 +95,10 @@ const Login = () => {
                             <label style={{
                                 display: 'block',
                                 fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#525252',
+                                fontWeight: '700',
+                                fontFamily: "'Oswald', sans-serif",
+                                textTransform: 'uppercase',
+                                color: 'var(--gray-300)',
                                 marginBottom: '8px'
                             }}>
                                 Email
@@ -128,8 +130,10 @@ const Login = () => {
                             <label style={{
                                 display: 'block',
                                 fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#525252',
+                                fontWeight: '700',
+                                fontFamily: "'Oswald', sans-serif",
+                                textTransform: 'uppercase',
+                                color: 'var(--gray-300)',
                                 marginBottom: '8px'
                             }}>
                                 Password
@@ -199,11 +203,11 @@ const Login = () => {
                     <p style={{
                         textAlign: 'center',
                         marginTop: '24px',
-                        color: '#737373',
+                        color: 'var(--gray-300)',
                         fontSize: '14px'
                     }}>
                         Don't have an account?{' '}
-                        <Link to="/register" style={{ color: '#6366f1', fontWeight: '500', textDecoration: 'none' }}>
+                        <Link to="/register" style={{ color: 'var(--primary-500)', fontWeight: '700', textDecoration: 'none', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>
                             Create one
                         </Link>
                     </p>

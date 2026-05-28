@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Swords, Users, Trophy, Sparkles, Eye, Brain,
-    Zap, Shield, Crown, ArrowRight, ChevronRight
+    Zap, Shield, Crown, ArrowRight
 } from 'lucide-react';
 
 const Landing = () => {
@@ -10,46 +10,40 @@ const Landing = () => {
         {
             icon: <Swords className="w-6 h-6" />,
             title: 'Real-Time Battles',
-            description: '1v1, 2v2, and Battle Royale modes with live AI scoring',
-            iconBg: 'bg-rose-50 text-rose-500'
+            description: '1v1, 2v2, and Battle Royale modes with live AI scoring'
         },
         {
             icon: <Shield className="w-6 h-6" />,
             title: 'Anonymous Mode',
-            description: 'Debate freely with AI-generated secret identities',
-            iconBg: 'bg-violet-50 text-violet-500'
+            description: 'Debate freely with AI-generated secret identities'
         },
         {
             icon: <Brain className="w-6 h-6" />,
             title: 'AI-Powered',
-            description: 'OpenAI moderates, fact-checks, and scores every argument',
-            iconBg: 'bg-sky-50 text-sky-500'
+            description: 'OpenAI moderates, fact-checks, and scores every argument'
         },
         {
             icon: <Eye className="w-6 h-6" />,
             title: 'Spectate & Bet',
-            description: 'Watch live debates and bet XP on your favorite debaters',
-            iconBg: 'bg-amber-50 text-amber-500'
+            description: 'Watch live debates and bet XP on your favorite debaters'
         },
         {
             icon: <Users className="w-6 h-6" />,
             title: 'Communities',
-            description: 'Join topic-based groups and compete in tournaments',
-            iconBg: 'bg-emerald-50 text-emerald-500'
+            description: 'Join topic-based groups and compete in tournaments'
         },
         {
             icon: <Trophy className="w-6 h-6" />,
             title: 'Climb the Ranks',
-            description: 'From Novice to Legend - prove your debate skills',
-            iconBg: 'bg-indigo-50 text-indigo-500'
+            description: 'From Novice to Legend - prove your debate skills'
         },
     ];
 
     const stats = [
-        { value: '10K+', label: 'Debaters' },
-        { value: '50K+', label: 'Debates' },
-        { value: '1M+', label: 'Arguments' },
-        { value: '99%', label: 'Fun Level' },
+        { value: '10K+', label: 'Active Gladiators' },
+        { value: '50K+', label: 'Clashes Fought' },
+        { value: '1M+', label: 'Arguments Scored' },
+        { value: '100%', label: 'Pure Logic' },
     ];
 
     const steps = [
@@ -60,93 +54,87 @@ const Landing = () => {
     ];
 
     return (
-        <div style={{ minHeight: '100vh', background: '#fff' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
             {/* Navbar */}
-            <nav className="navbar" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <nav className="navbar" style={{ maxWidth: '1400px', margin: '0 auto', borderBottom: 'none' }}>
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
                     <div style={{
                         width: '40px',
                         height: '40px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        background: 'var(--primary-500)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'white' }}>DV</span>
+                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
                     </div>
-                    <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#171717' }}>DebateVerse</span>
+                    <span style={{ fontSize: '24px', fontWeight: '700', color: 'var(--gray-50)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '2px' }}>MindClash</span>
                 </Link>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <Link to="/login" className="btn-secondary" style={{ fontSize: '14px', padding: '10px 20px' }}>
                         Login
                     </Link>
                     <Link to="/register" className="btn-primary" style={{ fontSize: '14px', padding: '10px 20px' }}>
-                        Get Started
+                        Play Free
                         <ArrowRight style={{ width: '16px', height: '16px' }} />
                     </Link>
                 </div>
             </nav>
 
             {/* Hero Section */}
-            <section style={{ padding: '80px 24px', background: '#fff' }}>
-                <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+            <section style={{ padding: '120px 24px', background: 'var(--bg-primary)', borderBottom: '1px solid var(--gray-700)', position: 'relative', overflow: 'hidden' }}>
+                {/* Background Decor */}
+                <div style={{ position: 'absolute', top: '-10%', right: '-5%', fontSize: '40vw', fontWeight: '700', color: 'rgba(255,255,255,0.02)', fontFamily: "'Oswald', sans-serif", lineHeight: 0, zIndex: 0, pointerEvents: 'none' }}>
+                    CLASH
+                </div>
+                
+                <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
                         {/* Badge */}
-                        <div className="badge badge-primary" style={{ marginBottom: '24px' }}>
+                        <div className="badge" style={{ marginBottom: '24px' }}>
                             <Sparkles style={{ width: '14px', height: '14px' }} />
                             The Ultimate Debate Arena
                         </div>
 
                         {/* Main Heading */}
                         <h1 style={{
-                            fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
+                            fontSize: 'clamp(4rem, 8vw, 6rem)',
                             fontWeight: '700',
-                            color: '#171717',
+                            fontFamily: "'Oswald', sans-serif",
+                            color: 'var(--gray-50)',
                             marginBottom: '16px',
-                            lineHeight: '1.2'
+                            lineHeight: '1.1',
+                            textTransform: 'uppercase'
                         }}>
-                            Welcome to
-                            <span className="text-gradient" style={{ display: 'block', marginTop: '8px' }}>DebateVerse</span>
+                            Defy Limits. <br />
+                            <span style={{ color: 'var(--primary-500)' }}>Prove Your Mind.</span>
                         </h1>
 
                         <p style={{
                             fontSize: '18px',
-                            color: '#737373',
+                            color: 'var(--gray-200)',
                             maxWidth: '600px',
                             margin: '0 auto 40px',
                             lineHeight: '1.7'
                         }}>
-                            Challenge opponents anonymously, let AI score your arguments in real-time,
-                            bet XP on winners, and climb the global leaderboard.
+                            Challenge opponents anonymously. Let AI score your arguments in real-time. 
+                            Bet XP, dominate the arena, and climb the global leaderboard.
                         </p>
 
                         {/* CTA Buttons */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px', marginBottom: '60px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '80px' }}>
                             <Link to="/register">
                                 <motion.button
                                     className="btn-primary"
-                                    style={{ fontSize: '16px', padding: '14px 32px' }}
+                                    style={{ fontSize: '18px', padding: '16px 40px' }}
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                 >
                                     Enter the Arena
-                                    <Zap style={{ width: '18px', height: '18px' }} />
-                                </motion.button>
-                            </Link>
-                            <Link to="/leaderboard">
-                                <motion.button
-                                    className="btn-secondary"
-                                    style={{ fontSize: '16px', padding: '14px 32px' }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    <Crown style={{ width: '18px', height: '18px', color: '#f59e0b' }} />
-                                    View Leaderboard
                                 </motion.button>
                             </Link>
                         </div>
@@ -155,13 +143,13 @@ const Landing = () => {
                     {/* Stats */}
                     <motion.div
                         className="grid-4"
-                        style={{ maxWidth: '700px', margin: '0 auto' }}
+                        style={{ maxWidth: '900px', margin: '0 auto' }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                     >
                         {stats.map((stat, i) => (
-                            <div key={i} className="stat-card">
+                            <div key={i} className="stat-card" style={{ background: 'var(--gray-900)' }}>
                                 <div className="stat-value">{stat.value}</div>
                                 <div className="stat-label">{stat.label}</div>
                             </div>
@@ -171,19 +159,19 @@ const Landing = () => {
             </section>
 
             {/* Features Section */}
-            <section style={{ padding: '80px 24px', background: '#fafafa' }}>
-                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <section style={{ padding: '100px 24px', background: 'var(--gray-50)' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <motion.div
-                        style={{ textAlign: 'center', marginBottom: '56px' }}
+                        style={{ textAlign: 'center', marginBottom: '60px' }}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                     >
-                        <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: '700', color: '#171717', marginBottom: '12px' }}>
-                            Why <span className="text-gradient">DebateVerse</span>?
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: '700', fontFamily: "'Oswald', sans-serif", color: 'var(--gray-900)', marginBottom: '12px', textTransform: 'uppercase' }}>
+                            Why <span style={{ color: 'var(--primary-500)' }}>MindClash</span>?
                         </h2>
-                        <p style={{ fontSize: '16px', color: '#737373', maxWidth: '500px', margin: '0 auto' }}>
-                            The most advanced AI-powered debate platform on the internet
+                        <p style={{ fontSize: '18px', color: 'var(--gray-500)', maxWidth: '500px', margin: '0 auto' }}>
+                            The most advanced AI-powered debate platform on the internet.
                         </p>
                     </motion.div>
 
@@ -191,19 +179,19 @@ const Landing = () => {
                         {features.map((feature, i) => (
                             <motion.div
                                 key={i}
-                                className="feature-card"
+                                style={{ background: '#fff', border: '1px solid var(--gray-200)', borderBottom: '4px solid var(--primary-500)', padding: '32px' }}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
                             >
-                                <div className={`feature-icon ${feature.iconBg}`}>
+                                <div style={{ width: '48px', height: '48px', background: 'var(--primary-50)', color: 'var(--primary-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
                                     {feature.icon}
                                 </div>
-                                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#171717', marginBottom: '8px' }}>
+                                <h3 style={{ fontSize: '20px', fontWeight: '700', fontFamily: "'Oswald', sans-serif", color: 'var(--gray-900)', marginBottom: '12px', textTransform: 'uppercase' }}>
                                     {feature.title}
                                 </h3>
-                                <p style={{ fontSize: '14px', color: '#737373', lineHeight: '1.6' }}>
+                                <p style={{ fontSize: '15px', color: 'var(--gray-500)', lineHeight: '1.6' }}>
                                     {feature.description}
                                 </p>
                             </motion.div>
@@ -213,104 +201,59 @@ const Landing = () => {
             </section>
 
             {/* How It Works */}
-            <section style={{ padding: '80px 24px', background: '#fff' }}>
+            <section style={{ padding: '100px 24px', background: 'var(--bg-primary)' }}>
                 <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: '700', color: '#171717', marginBottom: '56px' }}>
-                        How It Works
+                    <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: '700', fontFamily: "'Oswald', sans-serif", color: 'var(--gray-50)', marginBottom: '60px', textTransform: 'uppercase' }}>
+                        Rules of Engagement
                     </h2>
 
                     <div className="grid-4">
                         {steps.map((item, i) => (
                             <motion.div
                                 key={i}
-                                className="glass-card"
-                                style={{ textAlign: 'center', position: 'relative' }}
+                                className="arena-card"
+                                style={{ textAlign: 'center', background: 'var(--gray-800)' }}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
                             >
                                 <div style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                    color: 'white',
+                                    width: '40px',
+                                    height: '40px',
+                                    background: 'var(--primary-500)',
+                                    color: 'var(--gray-50)',
                                     fontWeight: '700',
+                                    fontFamily: "'Oswald', sans-serif",
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    margin: '0 auto 16px',
-                                    fontSize: '14px'
+                                    margin: '0 auto 20px',
+                                    fontSize: '20px'
                                 }}>
-                                    {item.step}
+                                    0{item.step}
                                 </div>
-                                <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#171717', marginBottom: '8px' }}>{item.title}</h3>
-                                <p style={{ fontSize: '13px', color: '#737373' }}>{item.desc}</p>
+                                <h3 style={{ fontSize: '18px', fontWeight: '700', fontFamily: "'Oswald', sans-serif", color: 'var(--gray-50)', marginBottom: '8px', textTransform: 'uppercase' }}>{item.title}</h3>
+                                <p style={{ fontSize: '14px', color: 'var(--gray-200)' }}>{item.desc}</p>
                             </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section style={{ padding: '80px 24px', background: '#fafafa' }}>
-                <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-                    <motion.div
-                        style={{
-                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                            borderRadius: '20px',
-                            padding: 'clamp(40px, 5vw, 60px)',
-                            textAlign: 'center',
-                            color: 'white'
-                        }}
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                    >
-                        <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '700', marginBottom: '12px' }}>
-                            Ready to Debate?
-                        </h2>
-                        <p style={{ fontSize: '16px', marginBottom: '28px', opacity: 0.9 }}>
-                            Join thousands of debaters and prove your skills
-                        </p>
-                        <Link to="/register">
-                            <motion.button
-                                style={{
-                                    background: 'white',
-                                    color: '#171717',
-                                    padding: '14px 32px',
-                                    borderRadius: '12px',
-                                    fontWeight: '600',
-                                    fontSize: '15px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                                }}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                Create Free Account
-                                <ArrowRight style={{ width: '18px', height: '18px' }} />
-                            </motion.button>
-                        </Link>
-                    </motion.div>
-                </div>
-            </section>
-
             {/* Footer */}
             <footer style={{
-                padding: '24px',
+                padding: '32px 24px',
                 textAlign: 'center',
-                color: '#a3a3a3',
-                borderTop: '1px solid #e5e5e5',
-                background: '#fff',
-                fontSize: '14px'
+                color: 'var(--gray-400)',
+                background: 'var(--gray-900)',
+                borderTop: '1px solid var(--gray-800)',
+                fontSize: '14px',
+                fontFamily: "'Oswald', sans-serif",
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
             }}>
-                <p>Made with ❤️ by DebateVerse Team • © 2024</p>
+                <p>Made by MindClash Team • © 2024</p>
             </footer>
         </div>
     );
