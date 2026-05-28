@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 import {
     Swords, Users, Trophy, Sparkles, Eye, Brain,
-    Zap, Shield, Crown, ArrowRight
+    Zap, Shield, Crown, ArrowRight, Sun, Moon
 } from 'lucide-react';
+import ArenaBackground from '../components/3d/ArenaBackground';
 
 const Landing = () => {
+    const { theme, toggleTheme } = useTheme();
     const features = [
         {
             icon: <Swords className="w-6 h-6" />,
@@ -70,9 +73,31 @@ const Landing = () => {
                     </div>
                     <span style={{ fontSize: '24px', fontWeight: '700', color: 'var(--gray-50)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '2px' }}>MindClash</span>
                 </Link>
+                
+                {/* Auth & Theme Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <Link to="/login" className="btn-secondary" style={{ fontSize: '14px', padding: '10px 20px' }}>
-                        Login
+                    <button
+                        onClick={toggleTheme}
+                        style={{
+                            padding: '8px',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--gray-300)',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                        title="Toggle Theme"
+                        onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; }}
+                    >
+                        {theme === 'dark' ? <Sun style={{ width: '20px', height: '20px' }} /> : <Moon style={{ width: '20px', height: '20px' }} />}
+                    </button>
+
+                    <Link to="/login" style={{ color: 'var(--gray-50)', fontWeight: '600', textDecoration: 'none', fontFamily: "'Oswald', sans-serif", fontSize: '15px', letterSpacing: '1px' }} className="hidden-mobile">
+                        LOG IN
                     </Link>
                     <Link to="/register" className="btn-primary" style={{ fontSize: '14px', padding: '10px 20px' }}>
                         Play Free
@@ -82,7 +107,9 @@ const Landing = () => {
             </nav>
 
             {/* Hero Section */}
-            <section style={{ padding: '120px 24px', background: 'var(--bg-primary)', borderBottom: '1px solid var(--gray-700)', position: 'relative', overflow: 'hidden' }}>
+            <section style={{ padding: '120px 24px', background: 'transparent', borderBottom: '1px solid var(--gray-700)', position: 'relative', overflow: 'hidden' }}>
+                <ArenaBackground />
+                
                 {/* Background Decor */}
                 <div style={{ position: 'absolute', top: '-10%', right: '-5%', fontSize: '40vw', fontWeight: '700', color: 'rgba(255,255,255,0.02)', fontFamily: "'Oswald', sans-serif", lineHeight: 0, zIndex: 0, pointerEvents: 'none' }}>
                     CLASH

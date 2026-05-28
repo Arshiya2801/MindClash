@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Pages
 import Landing from './pages/Landing';
@@ -35,37 +36,39 @@ function App() {
   }
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <ThemeProvider>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      {/* Protected Routes */}
-      <Route element={<Layout />}>
-        <Route path="/dashboard" element={
-          <ProtectedRoute><Dashboard /></ProtectedRoute>
-        } />
-        <Route path="/arena" element={
-          <ProtectedRoute><Arena /></ProtectedRoute>
-        } />
-        <Route path="/debate/:id" element={<Debate />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/profile/:username" element={<Profile />} />
-        <Route path="/marketplace" element={
-          <ProtectedRoute><Marketplace /></ProtectedRoute>
-        } />
-        <Route path="/topics" element={
-          <ProtectedRoute><Topics /></ProtectedRoute>
-        } />
-        <Route path="/communities" element={
-          <ProtectedRoute><Communities /></ProtectedRoute>
-        } />
-      </Route>
+        {/* Protected Routes */}
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={
+            <ProtectedRoute><Dashboard /></ProtectedRoute>
+          } />
+          <Route path="/arena" element={
+            <ProtectedRoute><Arena /></ProtectedRoute>
+          } />
+          <Route path="/debate/:id" element={<Debate />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/marketplace" element={
+            <ProtectedRoute><Marketplace /></ProtectedRoute>
+          } />
+          <Route path="/topics" element={
+            <ProtectedRoute><Topics /></ProtectedRoute>
+          } />
+          <Route path="/communities" element={
+            <ProtectedRoute><Communities /></ProtectedRoute>
+          } />
+        </Route>
 
-      {/* 404 */}
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        {/* 404 */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </ThemeProvider>
   );
 }
 

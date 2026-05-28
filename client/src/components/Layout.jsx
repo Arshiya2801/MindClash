@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
     Home, Swords, Trophy, ShoppingBag, User, Menu, X, LogOut,
-    Zap, MessageSquare, Users
+    Zap, MessageSquare, Users, Sun, Moon
 } from 'lucide-react';
 import LevelUpModal from './LevelUpModal';
 
 const Layout = () => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
@@ -130,6 +132,27 @@ const Layout = () => {
                                 </span>
                             </div>
                         </Link>
+
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            style={{
+                                padding: '8px',
+                                background: 'var(--gray-800)',
+                                border: '1px solid var(--gray-600)',
+                                cursor: 'pointer',
+                                color: 'var(--gray-300)',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            title="Toggle Theme"
+                            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; e.currentTarget.style.borderColor = 'var(--primary-500)' }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.borderColor = 'var(--gray-600)' }}
+                        >
+                            {theme === 'dark' ? <Sun style={{ width: '18px', height: '18px' }} /> : <Moon style={{ width: '18px', height: '18px' }} />}
+                        </button>
 
                         {/* Logout */}
                         <button
