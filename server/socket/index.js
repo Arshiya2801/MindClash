@@ -8,6 +8,7 @@ import openaiService from '../services/openaiService.js';
 const matchmakingQueue = new Map(); // queueKey → [entry]
 const activeDebates    = new Map(); // debateId → debate doc
 const userSockets      = new Map(); // userId   → socketId
+const pendingDisconnects = new Map(); // userId → timeoutId
 
 // How many messages each side must submit before the debate ends
 const MESSAGES_PER_SIDE = 5;
@@ -43,6 +44,13 @@ export const initializeSocket = (io) => {
         socket.on('join_queue', async (data) => {
             try {
                 const { type = '1v1', category, isAnonymous = false } = data;
+                const uid = socket.user._id.toString();
+
+                // Deduplicate: if user is already in ANY queue, remove them first
+                for (const [, q] of matchmakingQueue) {
+                    const idx = q.findIndex(e => e.userId === uid);
+                    if (idx > -1) q.splice(idx, 1);
+                }
 
                 // Generate alias for anonymous users (local, no AI call)
                 const alias = isAnonymous
@@ -51,7 +59,7 @@ export const initializeSocket = (io) => {
 
                 const entry = {
                     socketId:  socket.id,
-                    userId:    socket.user._id.toString(),
+                    userId:    uid,
                     username:  socket.user.username,
                     tier:      socket.user.tier,
                     reputation:socket.user.reputation,
@@ -81,12 +89,23 @@ export const initializeSocket = (io) => {
         });
 
         socket.on('leave_queue', (data) => {
-            const { type = '1v1', category } = data;
-            const queueKey = `${type}-${category || 'any'}`;
-            const queue = matchmakingQueue.get(queueKey);
-            if (queue) {
-                const i = queue.findIndex(e => e.socketId === socket.id);
-                if (i > -1) queue.splice(i, 1);
+            const { type = '1v1', category } = data || {};
+            const uid = socket.user._id.toString();
+
+            if (type && type !== '1v1' || category) {
+                // Specific queue
+                const queueKey = `${type}-${category || 'any'}`;
+                const queue = matchmakingQueue.get(queueKey);
+                if (queue) {
+                    const i = queue.findIndex(e => e.userId === uid);
+                    if (i > -1) queue.splice(i, 1);
+                }
+            } else {
+                // Remove from ALL queues
+                for (const [, q] of matchmakingQueue) {
+                    const i = q.findIndex(e => e.userId === uid);
+                    if (i > -1) q.splice(i, 1);
+                }
             }
             socket.emit('queue_left');
         });
@@ -106,6 +125,7 @@ export const initializeSocket = (io) => {
                 socket.debateId = debateId;
 
                 const uid = socket.user._id.toString();
+
                 const isProTeam = debate.proTeam.some(p => p.user._id.toString() === uid);
                 const isConTeam = debate.conTeam.some(p => p.user._id.toString() === uid);
                 const isParticipant = isProTeam || isConTeam;
@@ -372,6 +392,9 @@ export const initializeSocket = (io) => {
         socket.on('leave_debate', (data) => {
             const { debateId } = data;
             socket.leave(`debate:${debateId}`);
+            // Don't trigger disconnect handler here — this fires on React
+            // cleanup and tab navigation. Only true socket disconnect (browser
+            // close / hard refresh) should end the match.
             socket.debateId = null;
         });
 
@@ -382,15 +405,17 @@ export const initializeSocket = (io) => {
             await User.findByIdAndUpdate(socket.user._id, { isOnline: false });
 
             if (socket.debateId) {
-                await Debate.findByIdAndUpdate(socket.debateId, {
+                const debateId = socket.debateId;
+                await Debate.findByIdAndUpdate(debateId, {
                     $inc:  { spectatorCount: -1 },
                     $pull: { spectators: { user: socket.user._id } },
                 });
             }
 
-            // Remove from all queues
+            // Remove from ALL queues by userId (safe across reconnects)
+            const uid = socket.user._id.toString();
             for (const [, queue] of matchmakingQueue) {
-                const i = queue.findIndex(e => e.socketId === socket.id);
+                const i = queue.findIndex(e => e.userId === uid);
                 if (i > -1) queue.splice(i, 1);
             }
         });
@@ -413,7 +438,10 @@ async function tryMatchmaking(io, queueKey, type) {
         console.log(`🏆 Match created: ${debate._id}`);
 
         players.forEach((player, index) => {
-            const playerSocket = io.sockets.sockets.get(player.socketId);
+            // Always look up the CURRENT socket from userSockets (updated on every connect)
+            // The queue entry's socketId may be stale if the user reconnected
+            const currentSocketId = userSockets.get(player.userId) || player.socketId;
+            const playerSocket = io.sockets.sockets.get(currentSocketId);
             if (playerSocket) {
                 const side = index < required / 2 ? 'pro' : 'con';
                 const opponent = players.find((_, i) =>
@@ -426,6 +454,9 @@ async function tryMatchmaking(io, queueKey, type) {
                     opponent: opponent?.isAnonymous ? opponent.alias : opponent?.username,
                     alias:    player.isAnonymous ? player.alias : null,
                 });
+                console.log(`✅ match_found sent to ${player.username} (${currentSocketId})`);
+            } else {
+                console.warn(`⚠️  match_found FAILED for ${player.username} — socket ${currentSocketId} not found`);
             }
         });
     }

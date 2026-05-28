@@ -47,10 +47,12 @@ const Debate = () => {
     // Results state
     const [debateEnded, setDebateEnded] = useState(false);
     const [debateResult, setDebateResult] = useState(null);
+    const [exitCountdown, setExitCountdown] = useState(60);
 
     const messagesEndRef = useRef(null);
     const chatEndRef = useRef(null);
     const timerRef = useRef(null);
+    const myRoleRef = useRef(null);
 
     const reactionEmojis = ['🔥', '👏', '💯', '🤔', '😱', '💀'];
     const roundNames = ['Opening', 'Rebuttal', 'Counter', 'Closing'];
@@ -66,12 +68,13 @@ const Debate = () => {
         console.log('🎮 Joining debate:', id);
         socket.emit('join_debate', { debateId: id });
 
-        socket.on('debate_joined', (data) => {
+        const onDebateJoined = (data) => {
             console.log('📢 Debate joined:', data);
             const { debate, role } = data;
 
             setDebate(debate);
             setMyRole(role);
+            myRoleRef.current = role;
             setCurrentRound(debate.currentRound || 0);
             setCurrentSide(debate.currentSide || 'pro');
             setSpectatorCount(debate.spectatorCount || 0);
@@ -99,7 +102,6 @@ const Debate = () => {
                 setTimeLeft(remaining);
             }
 
-            // Extract messages and count
             let proCount = 0;
             let conCount = 0;
             const allMessages = debate.rounds?.flatMap(r =>
@@ -120,98 +122,98 @@ const Debate = () => {
             }
 
             setLoading(false);
-        });
+        };
 
-        socket.on('argument_submitted', (data) => {
-            console.log('📝 Argument submitted:', data);
+        const onArgumentSubmitted = (data) => {
             const { message, side, nextTurn, turnEndsAt, messageCount: count } = data;
-
             setMessages(prev => [...prev, { ...message, side }]);
-
-            if (count) {
-                setMessageCount(count);
-            }
-
+            if (count) setMessageCount(count);
             setCurrentSide(nextTurn);
             if (turnEndsAt) {
                 const remaining = Math.max(0, Math.floor((new Date(turnEndsAt) - Date.now()) / 1000));
                 setTimeLeft(remaining);
             }
-
-            setIsMyTurn(nextTurn === myRole);
+            setIsMyTurn(nextTurn === myRoleRef.current);
             setIsSubmitting(false);
-        });
+        };
 
-        socket.on('turn_changed', (data) => {
+        const onTurnChanged = (data) => {
             setCurrentSide(data.side);
             setTimeLeft(data.duration || 120);
-            if (myRole && myRole !== 'spectator') {
-                setIsMyTurn(data.side === myRole);
+            if (myRoleRef.current && myRoleRef.current !== 'spectator') {
+                setIsMyTurn(data.side === myRoleRef.current);
             }
-        });
+        };
 
-        socket.on('round_changed', (data) => {
-            console.log('📍 Round changed:', data);
+        const onRoundChanged = (data) => {
             setCurrentRound(data.roundNumber - 1);
             setCurrentSide(data.side);
             setTimeLeft(data.duration || 120);
-        });
+        };
 
-        socket.on('spectator_message', (data) => {
-            setSpectatorChat(prev => [...prev, data]);
-        });
-
-        socket.on('reaction', (data) => {
-            setReactions(prev => ({
-                ...prev,
-                [data.emoji]: (prev[data.emoji] || 0) + 1
-            }));
-        });
-
-        socket.on('betting_update', (data) => {
-            setBettingPool(data.pool);
-        });
-
-        socket.on('spectator_joined', (data) => {
-            setSpectatorCount(data.spectatorCount);
-        });
-
-        socket.on('argument_rejected', (data) => {
+        const onSpectatorMessage  = (data) => setSpectatorChat(prev => [...prev, data]);
+        const onReaction          = (data) => setReactions(prev => ({ ...prev, [data.emoji]: (prev[data.emoji] || 0) + 1 }));
+        const onBettingUpdate     = (data) => setBettingPool(data.pool);
+        const onSpectatorJoined   = (data) => setSpectatorCount(data.spectatorCount);
+        const onArgumentRejected  = (data) => {
             setError(`Rejected: ${data.reason}`);
             setIsSubmitting(false);
             setTimeout(() => setError(null), 5000);
-        });
-
-        socket.on('debate_ended', (data) => {
+        };
+        const onDebateEnded = (data) => {
             console.log('🏁 Debate ended:', data);
-            setDebateEnded(true);
-            setDebateResult(data);
-        });
-
-        socket.on('error', (data) => {
+            // Only process once — prevents flashing if event fires multiple times
+            setDebateEnded(prev => {
+                if (prev) return prev; // already ended, ignore
+                setDebateResult(data);
+                return true;
+            });
+        };
+        const onError = (data) => {
             console.error('Socket error:', data);
             if (data.message && !data.message.includes('already ended')) {
                 setError(data.message);
                 setTimeout(() => setError(null), 5000);
             }
             setIsSubmitting(false);
-        });
+        };
+
+        socket.on('debate_joined',       onDebateJoined);
+        socket.on('argument_submitted',  onArgumentSubmitted);
+        socket.on('turn_changed',        onTurnChanged);
+        socket.on('round_changed',       onRoundChanged);
+        socket.on('spectator_message',   onSpectatorMessage);
+        socket.on('reaction',            onReaction);
+        socket.on('betting_update',      onBettingUpdate);
+        socket.on('spectator_joined',    onSpectatorJoined);
+        socket.on('argument_rejected',   onArgumentRejected);
+        socket.on('debate_ended',        onDebateEnded);
+        socket.on('error',               onError);
 
         return () => {
-            socket.emit('leave_debate', { debateId: id });
-            socket.off('debate_joined');
-            socket.off('argument_submitted');
-            socket.off('turn_changed');
-            socket.off('round_changed');
-            socket.off('spectator_message');
-            socket.off('reaction');
-            socket.off('betting_update');
-            socket.off('spectator_joined');
-            socket.off('argument_rejected');
-            socket.off('debate_ended');
-            socket.off('error');
+            socket.off('debate_joined',      onDebateJoined);
+            socket.off('argument_submitted', onArgumentSubmitted);
+            socket.off('turn_changed',       onTurnChanged);
+            socket.off('round_changed',      onRoundChanged);
+            socket.off('spectator_message',  onSpectatorMessage);
+            socket.off('reaction',           onReaction);
+            socket.off('betting_update',     onBettingUpdate);
+            socket.off('spectator_joined',   onSpectatorJoined);
+            socket.off('argument_rejected',  onArgumentRejected);
+            socket.off('debate_ended',       onDebateEnded);
+            socket.off('error',              onError);
         };
-    }, [id, myRole]);
+    }, [id]);
+
+    // Only emit leave_debate when the WINDOW is truly closing (not SPA navigation)
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const socket = getSocket();
+            if (socket) socket.emit('leave_debate', { debateId: id });
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [id]);
 
     useEffect(() => {
         if (timeLeft > 0 && !debateEnded) {
@@ -222,6 +224,33 @@ const Debate = () => {
         return () => clearTimeout(timerRef.current);
     }, [timeLeft, debateEnded]);
 
+    // Auto-exit: 60s countdown after debate ends, then navigate to /arena
+    const hasAutoExited = useRef(false);
+    useEffect(() => {
+        if (!debateEnded || hasAutoExited.current) return;
+
+        // Reset countdown when debate ends
+        setExitCountdown(60);
+
+        const exitTimer = setInterval(() => {
+            setExitCountdown(prev => {
+                if (prev <= 1) {
+                    clearInterval(exitTimer);
+                    if (!hasAutoExited.current) {
+                        hasAutoExited.current = true;
+                        const socket = getSocket();
+                        if (socket) socket.emit('leave_debate', { debateId: id });
+                        navigate('/arena');
+                    }
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(exitTimer);
+    }, [debateEnded, id, navigate]);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -229,6 +258,14 @@ const Debate = () => {
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [spectatorChat]);
+
+    const handleLeaveDebate = (destination = '/arena') => {
+        const socket = getSocket();
+        if (socket) {
+            socket.emit('leave_debate', { debateId: id });
+        }
+        navigate(destination);
+    };
 
     const handleSubmitArgument = () => {
         if (!input.trim() || isSubmitting || !isMyTurn || debateEnded) return;
@@ -273,8 +310,8 @@ const Debate = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Results Modal
-    const ResultsModal = () => {
+    // Results Modal — NOT a component (avoids remount/flash on parent re-render)
+    const renderResultsModal = () => {
         if (!debateResult) return null;
 
         const didWin = myRole === debateResult.winner;
@@ -283,9 +320,23 @@ const Debate = () => {
 
         return (
             <motion.div
+                key="results-modal"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 50,
+                    padding: '16px'
+                }}
             >
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -477,9 +528,27 @@ const Debate = () => {
                         </div>
                     )}
 
+                    {/* Auto-Exit Countdown */}
+                    <div style={{
+                        marginBottom: '16px',
+                        padding: '12px',
+                        background: '#f3f4f6',
+                        borderRadius: '12px',
+                        color: '#4b5563',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        border: '1px solid #e5e7eb'
+                    }}>
+                        <Timer style={{ width: '16px', height: '16px' }} />
+                        Returning to Arena in <span style={{ color: '#ef4444', minWidth: '20px' }}>{exitCountdown}</span>s...
+                    </div>
+
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                         <button
-                            onClick={() => navigate('/arena')}
+                            onClick={() => handleLeaveDebate('/arena')}
                             style={{
                                 padding: '12px 24px',
                                 borderRadius: '12px',
@@ -497,7 +566,7 @@ const Debate = () => {
                             Back to Arena
                         </button>
                         <button
-                            onClick={() => navigate('/dashboard')}
+                            onClick={() => handleLeaveDebate('/dashboard')}
                             style={{
                                 padding: '12px 24px',
                                 borderRadius: '12px',
@@ -544,7 +613,7 @@ const Debate = () => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <AnimatePresence>
-                {debateEnded && <ResultsModal />}
+                {debateEnded && renderResultsModal()}
             </AnimatePresence>
 
             <AnimatePresence>
@@ -578,7 +647,7 @@ const Debate = () => {
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button
-                            onClick={() => navigate('/arena')}
+                            onClick={() => handleLeaveDebate('/arena')}
                             style={{ padding: '8px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '8px' }}
                         >
                             <ArrowLeft style={{ width: '20px', height: '20px' }} />
@@ -826,10 +895,15 @@ const Debate = () => {
                             </div>
                         )}
                     </div>
+                </div>
 
-                    {/* Reactions */}
+                {/* Right Sidebar */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* ── REACTIONS ── visible to ALL (players can react, spectators can react) */}
                     <div className="glass-card" style={{ padding: '16px' }}>
-                        <h3 style={{ fontWeight: '700', marginBottom: '12px' }}>⚡ React!</h3>
+                        <h3 style={{ fontWeight: '700', marginBottom: '12px', fontSize: '14px', color: '#525252' }}>
+                            ⚡ React!
+                        </h3>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {reactionEmojis.map((emoji) => (
                                 <motion.button
@@ -838,115 +912,131 @@ const Debate = () => {
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '8px',
-                                        padding: '8px 16px',
+                                        gap: '6px',
+                                        padding: '8px 14px',
                                         background: '#f5f5f5',
                                         border: 'none',
                                         borderRadius: '12px',
                                         cursor: 'pointer',
-                                        fontSize: '16px'
+                                        fontSize: '18px'
                                     }}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    whileHover={{ scale: 1.08 }}
+                                    whileTap={{ scale: 0.92 }}
                                 >
                                     <span>{emoji}</span>
-                                    <span style={{ fontWeight: '700', fontSize: '14px' }}>{reactions[emoji] || 0}</span>
+                                    <span style={{ fontWeight: '700', fontSize: '13px', color: '#374151' }}>{reactions[emoji] || 0}</span>
                                 </motion.button>
                             ))}
                         </div>
                     </div>
-                </div>
 
-                {/* Sidebar */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {/* Betting */}
+                    {/* ── SPECTATOR EXCLUSIVE: Live Chat ── */}
+                    {myRole === 'spectator' && (
+                        <div className="glass-card" style={{ padding: '16px' }}>
+                            <h3 style={{ fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                                👁️ Spectator Chat
+                                <span style={{ fontSize: '12px', fontWeight: '400', color: '#737373' }}>({spectatorCount} watching)</span>
+                            </h3>
+
+                            <div style={{ height: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                                {spectatorChat.length > 0 ? (
+                                    spectatorChat.map((msg, i) => (
+                                        <div key={i} style={{ padding: '8px 12px', background: '#f5f5f5', borderRadius: '8px', fontSize: '13px' }}>
+                                            <span style={{ fontWeight: '600', color: '#8b5cf6' }}>{msg.username}:</span> {msg.message}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '16px', color: '#a3a3a3', fontSize: '13px' }}>No messages yet</div>
+                                )}
+                                <div ref={chatEndRef} />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <input
+                                    type="text"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
+                                    placeholder="Chat as spectator..."
+                                    style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e5e5', fontSize: '13px' }}
+                                />
+                                <button onClick={handleSendChat} style={{ padding: '8px 12px', borderRadius: '8px', background: '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                                    <Send style={{ width: '16px', height: '16px' }} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── SPECTATOR EXCLUSIVE: Betting Pool ── */}
                     {myRole === 'spectator' && !debateEnded && (
                         <div className="glass-card" style={{ padding: '16px' }}>
-                            <h3 style={{ fontWeight: '700', marginBottom: '12px' }}>🎰 Betting Pool</h3>
+                            <h3 style={{ fontWeight: '700', marginBottom: '12px', fontSize: '14px' }}>🎰 Betting Pool</h3>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#ecfdf5', borderRadius: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ecfdf5', borderRadius: '10px' }}>
                                     <span style={{ fontWeight: '700', color: '#10b981' }}>✅ PRO</span>
                                     <span style={{ fontWeight: '700' }}>{bettingPool.pro || 0} XP</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#fef2f2', borderRadius: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#fef2f2', borderRadius: '10px' }}>
                                     <span style={{ fontWeight: '700', color: '#ef4444' }}>❌ CON</span>
                                     <span style={{ fontWeight: '700' }}>{bettingPool.con || 0} XP</span>
                                 </div>
                             </div>
 
                             {!myBet ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Zap style={{ width: '20px', height: '20px', color: '#f59e0b' }} />
+                                        <Zap style={{ width: '18px', height: '18px', color: '#f59e0b' }} />
                                         <input
                                             type="number"
                                             value={betAmount}
                                             onChange={(e) => setBetAmount(Math.max(10, parseInt(e.target.value) || 0))}
-                                            style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e5e5', textAlign: 'center' }}
+                                            style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e5e5', textAlign: 'center', fontSize: '14px' }}
                                             min="10"
                                         />
+                                        <span style={{ fontSize: '12px', color: '#737373' }}>XP</span>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                        <button onClick={() => handlePlaceBet('pro')} style={{ padding: '10px', borderRadius: '12px', background: '#10b981', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer' }}>
+                                        <button onClick={() => handlePlaceBet('pro')} style={{ padding: '10px', borderRadius: '10px', background: '#10b981', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '13px' }}>
                                             Bet PRO
                                         </button>
-                                        <button onClick={() => handlePlaceBet('con')} style={{ padding: '10px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer' }}>
+                                        <button onClick={() => handlePlaceBet('con')} style={{ padding: '10px', borderRadius: '10px', background: '#ef4444', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '13px' }}>
                                             Bet CON
                                         </button>
                                     </div>
                                 </div>
                             ) : (
                                 <div style={{ padding: '12px', background: 'linear-gradient(90deg, #fef3c7, #fde68a)', borderRadius: '12px', textAlign: 'center' }}>
-                                    <p style={{ fontSize: '12px', color: '#92400e' }}>Your Bet</p>
-                                    <p style={{ fontWeight: '700' }}>{myBet.amount} XP on {myBet.side.toUpperCase()}</p>
+                                    <p style={{ fontSize: '12px', color: '#92400e', marginBottom: '4px' }}>Your Bet Placed</p>
+                                    <p style={{ fontWeight: '700', color: '#78350f' }}>{myBet.amount} XP on {myBet.side.toUpperCase()}</p>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* Spectator Chat */}
-                    <div className="glass-card" style={{ padding: '16px' }}>
-                        <h3 style={{ fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            👁️ Live Chat
-                            <span style={{ fontSize: '13px', fontWeight: '400', color: '#737373' }}>({spectatorCount} watching)</span>
-                        </h3>
-
-                        <div style={{ height: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-                            {spectatorChat.length > 0 ? (
-                                spectatorChat.map((msg, i) => (
-                                    <div key={i} style={{ padding: '8px 12px', background: '#f5f5f5', borderRadius: '8px', fontSize: '13px' }}>
-                                        <span style={{ fontWeight: '600', color: '#8b5cf6' }}>{msg.username}:</span> {msg.message}
-                                    </div>
-                                ))
-                            ) : (
-                                <div style={{ textAlign: 'center', padding: '16px', color: '#737373', fontSize: '13px' }}>No messages yet</div>
-                            )}
-                            <div ref={chatEndRef} />
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                                type="text"
-                                value={chatInput}
-                                onChange={(e) => setChatInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
-                                placeholder="Say something..."
-                                style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e5e5', fontSize: '13px' }}
-                            />
-                            <button onClick={handleSendChat} style={{ padding: '8px 12px', borderRadius: '8px', background: '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                                <Send style={{ width: '16px', height: '16px' }} />
+                    {/* ── PLAYER EXCLUSIVE: Forfeit button ── */}
+                    {myRole !== 'spectator' && !debateEnded && (
+                        <div className="glass-card" style={{ padding: '16px' }}>
+                            <h3 style={{ fontWeight: '700', marginBottom: '12px', fontSize: '14px', color: '#525252' }}>⚠️ Options</h3>
+                            <button
+                                onClick={() => {
+                                    const socket = getSocket();
+                                    if (socket) socket.emit('forfeit', { debateId: id });
+                                }}
+                                style={{ width: '100%', padding: '10px', borderRadius: '10px', background: '#fef2f2', color: '#dc2626', fontWeight: '600', border: '1px solid #fecaca', cursor: 'pointer', fontSize: '13px' }}
+                            >
+                                🏳️ Forfeit Match
                             </button>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Topic Info */}
+                    {/* ── Topic Info ── visible to ALL */}
                     <div className="glass-card" style={{ padding: '16px' }}>
-                        <h3 style={{ fontWeight: '700', marginBottom: '12px' }}>📋 Topic</h3>
-                        <p style={{ fontSize: '13px', color: '#737373', marginBottom: '12px' }}>{debate.topic?.description || 'No description'}</p>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <span style={{ padding: '4px 12px', background: '#f5f5f5', borderRadius: '50px', fontSize: '12px' }}>{debate.type}</span>
-                            <span style={{ padding: '4px 12px', background: '#f5f5f5', borderRadius: '50px', fontSize: '12px' }}>{debate.topic?.category || 'General'}</span>
+                        <h3 style={{ fontWeight: '700', marginBottom: '12px', fontSize: '14px' }}>📋 Topic</h3>
+                        <p style={{ fontSize: '13px', color: '#737373', marginBottom: '12px', lineHeight: '1.5' }}>{debate.topic?.description || 'No description'}</p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ padding: '4px 12px', background: '#eef2ff', color: '#4f46e5', borderRadius: '50px', fontSize: '12px', fontWeight: '600' }}>{debate.type}</span>
+                            <span style={{ padding: '4px 12px', background: '#f5f5f5', color: '#525252', borderRadius: '50px', fontSize: '12px' }}>{debate.topic?.category || 'General'}</span>
                         </div>
                     </div>
                 </div>

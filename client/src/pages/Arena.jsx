@@ -46,20 +46,24 @@ const Arena = () => {
 
     useEffect(() => {
         const socket = getSocket();
-        if (socket) {
-            socket.on('match_found', (data) => {
-                setInQueue(false);
-                navigate(`/debate/${data.debateId}`);
-            });
-            socket.on('queue_update', (data) => {
-                console.log('Queue update:', data);
-            });
-        }
+        if (!socket) return;
+
+        const onMatchFound = (data) => {
+            console.log('🎯 match_found received:', data);
+            setInQueue(false);
+            navigate(`/debate/${data.debateId}`);
+        };
+
+        const onQueueUpdate = (data) => {
+            console.log('Queue update:', data);
+        };
+
+        socket.on('match_found', onMatchFound);
+        socket.on('queue_update', onQueueUpdate);
+
         return () => {
-            if (socket) {
-                socket.off('match_found');
-                socket.off('queue_update');
-            }
+            socket.off('match_found', onMatchFound);
+            socket.off('queue_update', onQueueUpdate);
         };
     }, [navigate]);
 
@@ -71,22 +75,27 @@ const Arena = () => {
         return () => clearInterval(timer);
     }, [inQueue]);
 
-    useEffect(() => {
-        if (tab === 'spectate') {
-            fetchLiveDebates();
-        }
-    }, [tab]);
-
-    const fetchLiveDebates = async () => {
-        setLoading(true);
+    const fetchLiveDebates = async (isBackground = false) => {
+        if (!isBackground) setLoading(true);
         try {
             const res = await debateAPI.getLive();
             setLiveDebates(res.data?.debates || []);
         } catch (err) {
             console.error('Error fetching debates:', err);
         }
-        setLoading(false);
+        if (!isBackground) setLoading(false);
     };
+
+    useEffect(() => {
+        let interval;
+        if (tab === 'spectate') {
+            fetchLiveDebates();
+            interval = setInterval(() => fetchLiveDebates(true), 10000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [tab]);
 
     const handleFindMatch = () => {
         setInQueue(true);
