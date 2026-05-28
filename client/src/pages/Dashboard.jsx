@@ -4,10 +4,9 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { debateAPI, topicAPI } from '../services/api';
 import {
-    Swords, Eye, Trophy, Flame, Users, Target,
-    Zap, Star, Sparkles, TrendingUp, Play, Crown
+    Swords, Eye, Trophy, Flame,
+    Zap, TrendingUp, Play
 } from 'lucide-react';
-import XPProgressBar from '../components/XPProgressBar';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -41,113 +40,131 @@ const Dashboard = () => {
 
         init();
 
-        // Setup polling for live debates every 10 seconds to auto-remove finished ones
         const interval = setInterval(fetchDebates, 10000);
         return () => clearInterval(interval);
     }, []);
 
     const stats = [
-        { label: 'Total Debates', value: user?.totalDebates || 0, icon: <Swords size={20} />, color: '#6366f1' },
-        { label: 'Wins', value: user?.wins || 0, icon: <Trophy size={20} />, color: '#10b981' },
-        { label: 'Win Rate', value: `${user?.totalDebates > 0 ? Math.round((user.wins / user.totalDebates) * 100) : 0}%`, icon: <TrendingUp size={20} />, color: '#3b82f6' },
-        { label: 'Current XP', value: user?.xp || 0, icon: <Zap size={20} />, color: '#f59e0b' },
+        { label: 'TOTAL_BATTLES', value: user?.totalDebates || 0, icon: <Swords size={20} />, color: 'var(--primary-500)' },
+        { label: 'VICTORIES', value: user?.wins || 0, icon: <Trophy size={20} />, color: 'var(--accent-emerald)' },
+        { label: 'WIN_RATE', value: `${user?.totalDebates > 0 ? Math.round((user.wins / user.totalDebates) * 100) : 0}%`, icon: <TrendingUp size={20} />, color: 'var(--accent-blue)' },
+        { label: 'EXP_POINTS', value: user?.xp || 0, icon: <Zap size={20} />, color: 'var(--accent-amber)' },
     ];
 
     const quickActions = [
         {
-            title: 'Quick Match',
-            desc: 'Jump into a 1v1 debate!',
-            icon: <Swords size={24} />,
-            color: '#6366f1',
+            title: 'QUICK MATCH',
+            desc: 'ENTER 1V1 ARENA',
+            icon: <Swords size={28} />,
+            color: 'var(--primary-500)',
             link: '/arena'
         },
         {
-            title: 'Spectate',
-            desc: 'Watch live debates',
-            icon: <Eye size={24} />,
-            color: '#3b82f6',
+            title: 'SPECTATE',
+            desc: 'WATCH LIVE MATCHES',
+            icon: <Eye size={28} />,
+            color: 'var(--accent-blue)',
             link: '/arena?tab=spectate'
         },
         {
-            title: 'Leaderboard',
-            desc: 'Check the rankings',
-            icon: <Trophy size={24} />,
-            color: '#f59e0b',
+            title: 'RANKINGS',
+            desc: 'GLOBAL LEADERBOARD',
+            icon: <Trophy size={28} />,
+            color: 'var(--accent-amber)',
             link: '/leaderboard'
         },
     ];
 
     const getTierConfig = (tier) => {
         const configs = {
-            'Novice': { emoji: '🌱', color: '#737373' },
-            'Debater': { emoji: '💚', color: '#10b981' },
-            'Skilled': { emoji: '⭐', color: '#f59e0b' },
+            'Novice': { emoji: '🌱', color: 'var(--gray-300)' },
+            'Debater': { emoji: '💚', color: 'var(--accent-emerald)' },
+            'Skilled': { emoji: '⭐', color: 'var(--accent-amber)' },
             'Expert': { emoji: '🔥', color: '#f97316' },
-            'Master': { emoji: '💎', color: '#ef4444' },
+            'Master': { emoji: '💎', color: 'var(--primary-500)' },
             'Grandmaster': { emoji: '👑', color: '#8b5cf6' },
-            'Legend': { emoji: '🌟', color: '#6366f1' },
+            'Legend': { emoji: '🌟', color: 'var(--accent-blue)' },
         };
         return configs[tier] || configs['Novice'];
     };
 
     const tierConfig = getTierConfig(user?.tier);
 
+    // Calc XP progress manually for the circular/HUD bar
+    const xpNeededForNextLevel = (user?.level || 1) * 1000;
+    const currentLevelXp = (user?.xp || 0) % 1000;
+    const xpPercentage = Math.min(100, Math.max(0, (currentLevelXp / xpNeededForNextLevel) * 100));
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Welcome Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            
+            {/* Cinematic Hero Section */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card"
-                style={{ padding: '24px' }}
-            >
-                <div style={{
+                className="arena-card"
+                style={{
+                    padding: '0',
+                    background: 'var(--bg-secondary)',
+                    overflow: 'hidden',
                     display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '16px'
-                }}>
-                    <div>
-                        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#171717', marginBottom: '8px' }}>
-                            Hey, <span className="text-gradient">{user?.username}</span>! 👋
-                        </h1>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                            <span style={{
-                                padding: '6px 14px',
-                                borderRadius: '50px',
-                                fontWeight: '600',
-                                background: '#f5f5f5',
-                                color: tierConfig.color,
-                                border: '1px solid #e5e5e5',
-                                fontSize: '14px'
-                            }}>
-                                {tierConfig.emoji} {user?.tier || 'Novice'}
-                            </span>
-                            <span style={{ color: '#737373', fontSize: '14px' }}>
-                                Level {user?.level || 1}
-                            </span>
+                    alignItems: 'stretch',
+                    border: '1px solid var(--gray-600)',
+                    borderBottom: '4px solid var(--primary-500)',
+                    minHeight: '280px'
+                }}
+            >
+                {/* Background Decor */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15), transparent 50%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '30px 30px', pointerEvents: 'none' }} />
+                
+                {/* Content */}
+                <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, zIndex: 1 }}>
+                    <div className="badge pulse-element" style={{ marginBottom: '16px', background: 'rgba(255, 70, 85, 0.1)', color: 'var(--primary-500)', borderColor: 'var(--primary-500)', width: 'fit-content' }}>
+                        <span style={{ width: '8px', height: '8px', background: 'var(--primary-500)', borderRadius: '50%' }} />
+                        ONLINE // ACTIVE
+                    </div>
+                    
+                    <h1 style={{ fontSize: 'clamp(2.5rem, 4vw, 4rem)', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', lineHeight: 1.1 }}>
+                        AGENT // <span className="hero-gradient-text">{user?.username}</span>
+                    </h1>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: tierConfig.color }}>
+                            {tierConfig.emoji} <span style={{ fontWeight: '700', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>{user?.tier || 'NOVICE'}</span>
                         </div>
-                        
-                        <div style={{ maxWidth: '400px', marginTop: '16px' }}>
-                            <XPProgressBar xp={user?.xp || 0} level={user?.level || 1} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-primary)' }}>
+                            <span style={{ fontWeight: '700', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>LVL {user?.level || 1}</span>
                         </div>
                     </div>
-                    <Link to="/arena">
-                        <motion.button
-                            className="btn-primary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            <Flame size={18} />
-                            Start Debating!
-                        </motion.button>
+                    
+                    <Link to="/arena" style={{ textDecoration: 'none', width: 'fit-content' }}>
+                        <button className="btn-primary" style={{ padding: '16px 32px', fontSize: '16px' }}>
+                            <Swords size={20} />
+                            ENTER THE ARENA
+                        </button>
                     </Link>
+                </div>
+                
+                {/* Holographic XP Ring */}
+                <div style={{ flex: '0 0 300px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', borderLeft: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', zIndex: 1 }} className="hidden-mobile">
+                    <div style={{ position: 'relative', width: '180px', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {/* Outer Ring */}
+                        <svg width="180" height="180" viewBox="0 0 180 180" style={{ position: 'absolute', transform: 'rotate(-90deg)' }}>
+                            <circle cx="90" cy="90" r="80" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                            <circle cx="90" cy="90" r="80" fill="none" stroke="var(--primary-500)" strokeWidth="8" strokeDasharray="502" strokeDashoffset={502 - (502 * xpPercentage) / 100} style={{ transition: 'stroke-dashoffset 1s ease-out' }} strokeLinecap="round" />
+                        </svg>
+                        
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ color: 'var(--primary-500)', fontSize: '12px', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', marginBottom: '4px' }}>EXP</div>
+                            <div style={{ color: 'var(--text-primary)', fontSize: '28px', fontWeight: '700', fontFamily: "'Oswald', sans-serif" }}>{Math.round(xpPercentage)}%</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '10px', letterSpacing: '1px' }}>TO NEXT LEVEL</div>
+                        </div>
+                    </div>
                 </div>
             </motion.div>
 
-            {/* Stats Grid */}
+            {/* Tactical Stats HUD */}
             <div className="grid-4">
                 {stats.map((stat, i) => (
                     <motion.div
@@ -155,199 +172,151 @@ const Dashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className="stat-card"
+                        className="arena-card"
+                        style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                     >
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '12px',
-                            background: `${stat.color}15`,
-                            color: stat.color,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 12px'
-                        }}>
-                            {stat.icon}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>{stat.label}</span>
+                            <div style={{ color: stat.color, filter: `drop-shadow(0 0 5px ${stat.color})` }}>
+                                {stat.icon}
+                            </div>
                         </div>
-                        <div className="stat-value" style={{ color: stat.color }}>{stat.value}</div>
-                        <div className="stat-label">{stat.label}</div>
+                        <div style={{ fontSize: '36px', fontWeight: '700', fontFamily: "'Oswald', sans-serif", color: 'var(--text-primary)', lineHeight: 1 }}>
+                            {stat.value}
+                        </div>
+                        
+                        {/* Fake micro-chart for visuals */}
+                        <div style={{ height: '24px', width: '100%', marginTop: '16px', display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+                            {[...Array(8)].map((_, j) => (
+                                <div key={j} style={{ flex: 1, background: stat.color, opacity: 0.2 + (Math.random() * 0.8), height: `${Math.max(20, Math.random() * 100)}%` }} />
+                            ))}
+                        </div>
                     </motion.div>
                 ))}
             </div>
 
             {/* Quick Actions */}
             <div>
-                <h2 style={{
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    marginBottom: '16px',
-                    color: '#171717',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                }}>
-                    <Sparkles size={18} style={{ color: '#f59e0b' }} />
-                    Quick Actions
+                <h2 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: 'var(--text-secondary)', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '12px', height: '2px', background: 'var(--accent-amber)' }} />
+                    COMMAND CENTER
                 </h2>
                 <div className="grid-3">
                     {quickActions.map((action, i) => (
                         <Link key={i} to={action.link} style={{ textDecoration: 'none' }}>
                             <motion.div
-                                className="action-card"
-                                whileHover={{ scale: 1.02, y: -2 }}
+                                className="arena-card"
+                                whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '20px' }}
                             >
                                 <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '12px',
-                                    background: `${action.color}15`,
+                                    width: '56px',
+                                    height: '56px',
+                                    background: `linear-gradient(135deg, transparent, ${action.color}20)`,
+                                    border: `1px solid ${action.color}40`,
                                     color: action.color,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center'
+                                    justifyContent: 'center',
+                                    clipPath: 'polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)'
                                 }}>
                                     {action.icon}
                                 </div>
-                                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#171717' }}>{action.title}</h3>
-                                <p style={{ fontSize: '13px', color: '#737373' }}>{action.desc}</p>
+                                <div>
+                                    <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>{action.title}</h3>
+                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>{action.desc}</p>
+                                </div>
                             </motion.div>
                         </Link>
                     ))}
                 </div>
             </div>
 
-            {/* Live Debates & Trending */}
+            {/* Live & Trending */}
             <div className="grid-2">
-                {/* Live Debates */}
-                <div className="glass-card">
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '16px'
-                    }}>
-                        <h2 style={{
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            color: '#171717',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <span style={{
-                                width: '8px',
-                                height: '8px',
-                                background: '#ef4444',
-                                borderRadius: '50%',
-                                animation: 'pulse-live 2s ease-in-out infinite'
-                            }}></span>
-                            Live Debates
-                        </h2>
-                        <Link to="/arena?tab=spectate" style={{
-                            color: '#6366f1',
-                            fontSize: '13px',
-                            fontWeight: '500',
-                            textDecoration: 'none'
-                        }}>
-                            View All →
-                        </Link>
-                    </div>
-
-                    {loading ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
-                            <div className="spinner"></div>
-                        </div>
-                    ) : liveDebates.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {liveDebates.slice(0, 3).map((debate, i) => (
-                                <Link key={i} to={`/debate/${debate._id}`} style={{ textDecoration: 'none' }}>
-                                    <motion.div
-                                        style={{
-                                            padding: '14px',
-                                            borderRadius: '12px',
-                                            background: '#fafafa',
-                                            border: '1px solid #e5e5e5',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between'
-                                        }}
-                                        whileHover={{ x: 4, borderColor: '#d4d4d4' }}
-                                    >
+                
+                {/* Live Debates Broadcast Feed */}
+                <div>
+                    <h2 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: 'var(--text-secondary)', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '8px', height: '8px', background: 'var(--primary-500)', borderRadius: '50%', animation: 'pulse-live 2s infinite' }} />
+                        LIVE BROADCASTS
+                    </h2>
+                    
+                    <div className="arena-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>Scanning frequencies...</div>
+                        ) : liveDebates.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', border: '1px dashed var(--gray-600)' }}>
+                                <Play style={{ margin: '0 auto 12px', opacity: 0.5 }} size={32} />
+                                <p>No live battles detected. Enter the Arena to start one.</p>
+                            </div>
+                        ) : (
+                            liveDebates.slice(0, 3).map((debate, i) => (
+                                <Link key={debate._id || i} to={`/arena?tab=spectate`} style={{ textDecoration: 'none' }}>
+                                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s', cursor: 'pointer' }}
+                                         onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                                         onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
                                         <div>
-                                            <p style={{ fontWeight: '500', color: '#171717', fontSize: '14px' }}>
-                                                {debate.topic?.title || 'Live Debate'}
-                                            </p>
-                                            <p style={{ fontSize: '12px', color: '#737373' }}>
-                                                {debate.type} • {debate.spectatorCount || 0} watching
-                                            </p>
+                                            <div style={{ fontSize: '12px', color: 'var(--primary-500)', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <Flame size={12} /> {debate.topic?.title || 'Live Debate'}
+                                            </div>
+                                            <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                {debate.participants?.[0]?.username || 'Player 1'} <span style={{ color: 'var(--text-muted)', fontSize: '12px', margin: '0 8px' }}>VS</span> {debate.participants?.[1]?.username || 'Player 2'}
+                                            </div>
                                         </div>
-                                        <span className="live-indicator">LIVE</span>
-                                    </motion.div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,70,85,0.1)', color: 'var(--primary-500)', padding: '4px 10px', fontSize: '12px', fontWeight: 'bold' }}>
+                                            <Eye size={14} /> LIVE
+                                        </div>
+                                    </div>
                                 </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="empty-state" style={{ padding: '32px' }}>
-                            <div style={{ fontSize: '32px', marginBottom: '12px', opacity: 0.5 }}>🎮</div>
-                            <p style={{ fontSize: '14px', color: '#737373', marginBottom: '16px' }}>No live debates right now</p>
-                            <Link to="/arena" className="btn-primary" style={{ fontSize: '13px', padding: '10px 16px' }}>
-                                <Play size={14} />
-                                Start One
-                            </Link>
-                        </div>
-                    )}
-                </div>
-
-                {/* Trending Topics */}
-                <div className="glass-card">
-                    <div style={{ marginBottom: '16px' }}>
-                        <h2 style={{
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            color: '#171717',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <Flame size={16} style={{ color: '#f59e0b' }} />
-                            Trending Topics
-                        </h2>
+                            ))
+                        )}
                     </div>
-
-                    {loading ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
-                            <div className="spinner"></div>
-                        </div>
-                    ) : trendingTopics.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {trendingTopics.slice(0, 5).map((topic, i) => (
-                                <motion.div
-                                    key={i}
-                                    style={{
-                                        padding: '12px',
-                                        borderRadius: '12px',
-                                        background: '#fafafa',
-                                        border: '1px solid #e5e5e5'
-                                    }}
-                                    whileHover={{ x: 4 }}
-                                >
-                                    <p style={{ fontWeight: '500', color: '#171717', fontSize: '14px' }}>{topic.title}</p>
-                                    <p style={{ fontSize: '12px', color: '#737373' }}>
-                                        {topic.category} • {topic.debateCount || 0} debates
-                                    </p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="empty-state" style={{ padding: '32px' }}>
-                            <div style={{ fontSize: '32px', marginBottom: '12px', opacity: 0.5 }}>💭</div>
-                            <p style={{ fontSize: '14px', color: '#737373' }}>No trending topics yet</p>
-                        </div>
-                    )}
                 </div>
+
+                {/* Trending Topics Network */}
+                <div>
+                    <h2 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: 'var(--text-secondary)', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '12px', height: '2px', background: 'var(--accent-blue)' }} />
+                        TRENDING MATRIX
+                    </h2>
+                    
+                    <div className="arena-card" style={{ padding: '32px', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {loading ? (
+                            <div style={{ color: 'var(--text-muted)' }}>Analyzing network...</div>
+                        ) : trendingTopics.length === 0 ? (
+                            <div style={{ color: 'var(--text-muted)' }}>No trending data detected.</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+                                {trendingTopics.map((topic, i) => (
+                                    <div key={i} className="float-element" style={{ 
+                                        animationDelay: `${i * 0.2}s`,
+                                        padding: '12px 20px', 
+                                        background: 'rgba(0,240,255,0.05)', 
+                                        border: '1px solid rgba(0,240,255,0.2)', 
+                                        color: 'var(--accent-blue)', 
+                                        fontSize: `${Math.max(14, 24 - (i * 2))}px`, 
+                                        fontWeight: '700', 
+                                        fontFamily: "'Oswald', sans-serif",
+                                        letterSpacing: '1px',
+                                        textTransform: 'uppercase',
+                                        boxShadow: '0 0 15px rgba(0,240,255,0.1)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0,240,255,0.15)'}
+                                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0,240,255,0.05)'}>
+                                        #{topic.title}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+                
             </div>
+            
         </div>
     );
 };
