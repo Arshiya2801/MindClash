@@ -187,32 +187,43 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
-   GLASS CARD -> ARENA CARD
+   PREMIUM CYBER CARDS (Global)
    ============================================ */
 .glass-card, .arena-card {
   background: var(--bg-card);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--gray-600);
-  border-left: 4px solid var(--primary-500);
+  border-bottom: 2px solid var(--primary-500);
   padding: 24px;
-  transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
 }
 
 .glass-card::before, .arena-card::before {
   content: '';
   position: absolute;
-  top: 0; right: 0;
-  width: 20px; height: 20px;
-  background: var(--primary-500);
-  clip-path: polygon(100% 0, 100% 100%, 0 0);
+  top: 0; left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 70, 85, 0.1), transparent);
+  transform: skewX(-20deg);
+  transition: all 0.5s ease;
+  pointer-events: none;
 }
 
 .glass-card:hover, .arena-card:hover {
+  transform: translateY(-4px);
   border-color: var(--primary-500);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 20px 40px rgba(255, 70, 85, 0.15), inset 0 0 20px rgba(255, 70, 85, 0.05);
 }
+
+.glass-card:hover::before, .arena-card:hover::before {
+  left: 150%;
+}
+
 
 /* ============================================
    BUTTONS - Tactical Cuts
@@ -606,4 +617,28 @@ h1, h2, h3, h4, h5, h6 {
 .footer-link:hover {
   color: var(--primary-500);
   transform: translateX(4px);
+}
+
+/* ============================================
+   GLOBAL MOTION & 3D SYSTEM
+   ============================================ */
+
+@keyframes floatAnimation {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 10px rgba(255, 70, 85, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(255, 70, 85, 0.6); }
+  100% { box-shadow: 0 0 10px rgba(255, 70, 85, 0.2); }
+}
+
+.float-element {
+  animation: floatAnimation 4s ease-in-out infinite;
+}
+
+.pulse-element {
+  animation: pulseGlow 2s ease-in-out infinite;
 }

@@ -59,50 +59,68 @@ const Landing = () => {
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
             {/* Navbar */}
-            <nav className="navbar" style={{ maxWidth: '1400px', margin: '0 auto', borderBottom: 'none' }}>
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        background: 'var(--primary-500)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
+            <nav className="navbar" style={{ padding: '16px 24px', background: 'transparent', borderBottom: 'none', position: 'relative', zIndex: 10 }}>
+                <div style={{
+                    maxWidth: '1400px',
+                    margin: '0 auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%'
+                }}>
+                    {/* Left Side: Logo */}
+                    <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-start' }}>
+                        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }} className="float-element">
+                            <div className="pulse-element" style={{
+                                width: '40px',
+                                height: '40px',
+                                background: 'var(--primary-500)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 0 15px rgba(255, 70, 85, 0.4)'
+                            }}>
+                                <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
+                            </div>
+                            <span style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-50)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '2px' }}>MindClash</span>
+                        </Link>
                     </div>
-                    <span style={{ fontSize: '24px', fontWeight: '700', color: 'var(--gray-50)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '2px' }}>MindClash</span>
-                </Link>
-                
-                {/* Auth & Theme Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <button
-                        onClick={toggleTheme}
-                        style={{
-                            padding: '8px',
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'var(--gray-300)',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        title="Toggle Theme"
-                        onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; }}
-                        onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; }}
-                    >
-                        {theme === 'dark' ? <Sun style={{ width: '20px', height: '20px' }} /> : <Moon style={{ width: '20px', height: '20px' }} />}
-                    </button>
 
-                    <Link to="/login" style={{ color: 'var(--gray-50)', fontWeight: '600', textDecoration: 'none', fontFamily: "'Oswald', sans-serif", fontSize: '15px', letterSpacing: '1px' }} className="hidden-mobile">
-                        LOG IN
-                    </Link>
-                    <Link to="/register" className="btn-primary" style={{ fontSize: '14px', padding: '10px 20px' }}>
-                        Play Free
-                        <ArrowRight style={{ width: '16px', height: '16px' }} />
-                    </Link>
+                    {/* Center: Empty for Landing Page balancing */}
+                    <div style={{ flex: '1' }}></div>
+                    
+                    {/* Right Side: Auth & Theme Toggle */}
+                    <div style={{ flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '24px' }}>
+                        <button
+                            onClick={toggleTheme}
+                            style={{
+                                padding: '8px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: 'var(--gray-300)',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            title="Toggle Theme"
+                            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; }}
+                        >
+                            {theme === 'dark' ? <Sun style={{ width: '20px', height: '20px' }} /> : <Moon style={{ width: '20px', height: '20px' }} />}
+                        </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <Link to="/login" style={{ color: 'var(--gray-50)', fontWeight: '600', textDecoration: 'none', fontFamily: "'Oswald', sans-serif", fontSize: '15px', letterSpacing: '1px' }} className="hidden-mobile">
+                                LOG IN
+                            </Link>
+                            <Link to="/register" className="btn-primary" style={{ fontSize: '14px', padding: '10px 24px' }}>
+                                Play Free
+                                <ArrowRight style={{ width: '16px', height: '16px' }} />
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </nav>
 

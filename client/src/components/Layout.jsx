@@ -59,50 +59,73 @@ const Layout = () => {
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
             {/* Header */}
-            <header className="navbar">
+            <header className="navbar" style={{ padding: '16px 24px', background: 'rgba(15, 25, 35, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)' }}>
                 <div style={{
-                    maxWidth: '1200px',
+                    maxWidth: '1400px',
                     margin: '0 auto',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    width: '100%'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                        {/* Logo */}
-                        <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-                            <div style={{
-                                width: '36px',
-                                height: '36px',
+                    
+                    {/* Left Side: Logo */}
+                    <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-start' }}>
+                        <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }} className="float-element">
+                            <div className="pulse-element" style={{
+                                width: '40px',
+                                height: '40px',
                                 background: 'var(--primary-500)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                boxShadow: '0 0 15px rgba(255, 70, 85, 0.4)'
                             }}>
-                                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
+                                <span style={{ fontSize: '16px', fontWeight: '700', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
                             </div>
-                            <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--gray-50)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '1px' }}>MindClash</span>
+                            <span style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '2px' }}>MindClash</span>
                         </Link>
-
-                        {/* Desktop Nav */}
-                        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }} className="hidden-mobile">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-                                >
-                                    <item.icon style={{ width: '16px', height: '16px' }} />
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </nav>
                     </div>
 
-                    {/* Right Side */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Center: Desktop Nav */}
+                    <nav style={{ flex: '2', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }} className="hidden-mobile">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+                                style={{
+                                    padding: '12px 20px',
+                                    fontSize: '15px',
+                                    position: 'relative'
+                                }}
+                            >
+                                <item.icon style={{ width: '18px', height: '18px' }} />
+                                {item.label}
+                                {isActive(item.path) && (
+                                    <motion.div
+                                        layoutId="activeNavIndicator"
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: '-1px',
+                                            left: '0',
+                                            right: '0',
+                                            height: '2px',
+                                            background: 'var(--primary-500)',
+                                            boxShadow: '0 0 10px var(--primary-500)'
+                                        }}
+                                    />
+                                )}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    {/* Right Side: Tools & Profile */}
+                    <div style={{ flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px' }}>
+                        
                         {/* XP Display */}
-                        <div className="xp-display">
-                            <Zap style={{ width: '16px', height: '16px' }} />
+                        <div className="xp-display pulse-element" style={{ borderRadius: '4px', background: 'rgba(255,70,85,0.05)', padding: '6px 12px' }}>
+                            <Zap style={{ width: '14px', height: '14px' }} />
                             <span>{user?.xp?.toLocaleString() || 0}</span>
                         </div>
 
@@ -113,21 +136,23 @@ const Layout = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '10px',
-                                padding: '8px 14px',
-                                background: 'var(--gray-800)',
-                                border: '1px solid var(--gray-600)',
+                                padding: '6px 12px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
                                 textDecoration: 'none',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.3s ease'
                             }}
+                            onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'rgba(255,70,85,0.05)' }}
+                            onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
                         >
-                            <div className="avatar">
+                            <div className="avatar" style={{ width: '32px', height: '32px', fontSize: '14px' }}>
                                 {user?.username?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             <div className="hidden-mobile">
-                                <span style={{ display: 'block', fontWeight: '700', fontFamily: "'Oswald', sans-serif", letterSpacing: '0.5px', color: 'var(--gray-50)', fontSize: '14px', textTransform: 'uppercase' }}>
+                                <span style={{ display: 'block', fontWeight: '700', fontFamily: "'Oswald', sans-serif", letterSpacing: '0.5px', color: 'var(--text-primary)', fontSize: '13px', textTransform: 'uppercase' }}>
                                     {user?.username}
                                 </span>
-                                <span style={{ display: 'block', fontSize: '11px', color: getTierColor(user?.tier), fontWeight: '700', textTransform: 'uppercase' }}>
+                                <span style={{ display: 'block', fontSize: '10px', color: getTierColor(user?.tier), fontWeight: '700', textTransform: 'uppercase' }}>
                                     {user?.tier || 'Novice'}
                                 </span>
                             </div>
@@ -138,8 +163,8 @@ const Layout = () => {
                             onClick={toggleTheme}
                             style={{
                                 padding: '8px',
-                                background: 'var(--gray-800)',
-                                border: '1px solid var(--gray-600)',
+                                background: 'transparent',
+                                border: 'none',
                                 cursor: 'pointer',
                                 color: 'var(--gray-300)',
                                 transition: 'all 0.2s ease',
@@ -148,10 +173,10 @@ const Layout = () => {
                                 justifyContent: 'center'
                             }}
                             title="Toggle Theme"
-                            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; e.currentTarget.style.borderColor = 'var(--primary-500)' }}
-                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.borderColor = 'var(--gray-600)' }}
+                            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.transform = 'scale(1)'; }}
                         >
-                            {theme === 'dark' ? <Sun style={{ width: '18px', height: '18px' }} /> : <Moon style={{ width: '18px', height: '18px' }} />}
+                            {theme === 'dark' ? <Sun style={{ width: '20px', height: '20px' }} /> : <Moon style={{ width: '20px', height: '20px' }} />}
                         </button>
 
                         {/* Logout */}
@@ -159,8 +184,8 @@ const Layout = () => {
                             onClick={logout}
                             style={{
                                 padding: '8px',
-                                background: 'var(--gray-800)',
-                                border: '1px solid var(--gray-600)',
+                                background: 'transparent',
+                                border: 'none',
                                 cursor: 'pointer',
                                 color: 'var(--gray-300)',
                                 transition: 'all 0.2s ease',
@@ -169,10 +194,10 @@ const Layout = () => {
                                 justifyContent: 'center'
                             }}
                             title="Logout"
-                            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; e.currentTarget.style.borderColor = 'var(--primary-500)' }}
-                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.borderColor = 'var(--gray-600)' }}
+                            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-500)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.transform = 'scale(1)'; }}
                         >
-                            <LogOut style={{ width: '18px', height: '18px' }} />
+                            <LogOut style={{ width: '20px', height: '20px' }} />
                         </button>
 
                         {/* Mobile Menu Button */}
@@ -181,15 +206,15 @@ const Layout = () => {
                             className="hidden-desktop"
                             style={{
                                 padding: '8px',
-                                borderRadius: '8px',
                                 background: 'transparent',
                                 border: 'none',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)'
                             }}
                         >
                             {mobileMenuOpen ?
-                                <X style={{ width: '20px', height: '20px' }} /> :
-                                <Menu style={{ width: '20px', height: '20px' }} />
+                                <X style={{ width: '24px', height: '24px' }} /> :
+                                <Menu style={{ width: '24px', height: '24px' }} />
                             }
                         </button>
                     </div>
