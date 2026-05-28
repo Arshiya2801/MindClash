@@ -10,8 +10,8 @@ const activeDebates    = new Map(); // debateId → debate doc
 const userSockets      = new Map(); // userId   → socketId
 const pendingDisconnects = new Map(); // userId → timeoutId
 
-// How many messages each side must submit before the debate ends
-const MESSAGES_PER_SIDE = 5;
+// How many total messages each SIDE must submit — varies by debate type
+const getMessagesPerSide = (type) => (type === '1v1' ? 5 : 6);
 
 // ─── Socket auth middleware ──────────────────────────────────────────────────
 const authenticateSocket = async (socket, next) => {
@@ -174,6 +174,9 @@ export const initializeSocket = (io) => {
                 if (debate.currentSide !== side)
                     return socket.emit('error', { message: 'Not your turn' });
 
+                if (debate.currentTurn && debate.currentTurn.toString() !== uid)
+                    return socket.emit('error', { message: 'Not your turn yet! Waiting for teammate.' });
+
                 // For multi-player teams: check if this specific player already spoke in the CURRENT round
                 const currentRoundIndex = Math.min(debate.currentRound, debate.rounds.length - 1);
                 const currentRound = debate.rounds[currentRoundIndex];
@@ -181,8 +184,6 @@ export const initializeSocket = (io) => {
 
                 const team = side === 'pro' ? debate.proTeam : debate.conTeam;
                 if (team.length > 1) {
-                    // In team debates: within the same round, each individual player
-                    // can only speak once. If they already spoke, reject.
                     const alreadySpoke = currentRound.messages.some(
                         m => m.sender.toString() === uid
                     );
@@ -215,9 +216,39 @@ export const initializeSocket = (io) => {
                     }
                 }
 
+                // ── Check if round should advance ─────────────────────────────
+                const roundProCount = currentRound.messages.filter(m =>
+                    debate.proTeam.some(p => p.user.toString() === m.sender.toString())
+                ).length;
+                const roundConCount = currentRound.messages.filter(m =>
+                    debate.conTeam.some(p => p.user.toString() === m.sender.toString())
+                ).length;
+
+                const perTeamSize = Math.max(debate.proTeam.length, 1);
+                let roundAdvanced = false;
+                if (roundProCount >= perTeamSize && roundConCount >= perTeamSize
+                    && debate.currentRound < debate.rounds.length - 1) {
+                    debate.currentRound += 1;
+                    roundAdvanced = true;
+                }
+
                 // ── Switch turns ──────────────────────────────────────────────
                 debate.currentSide = side === 'pro' ? 'con' : 'pro';
                 debate.turnEndsAt  = new Date(Date.now() + 120000); // 2 min
+
+                const nextTeam = debate.currentSide === 'pro' ? debate.proTeam : debate.conTeam;
+                if (nextTeam.length > 0) {
+                    if (roundAdvanced) {
+                        debate.currentTurn = nextTeam[0].user;
+                    } else {
+                        const activeRound = debate.rounds[debate.currentRound];
+                        const nextTeamMsgsThisRound = activeRound.messages.filter(m =>
+                            nextTeam.some(p => p.user.toString() === m.sender.toString())
+                        ).length;
+                        debate.currentTurn = nextTeam[nextTeamMsgsThisRound % nextTeam.length].user;
+                    }
+                }
+
                 await debate.save();
 
                 // Broadcast the argument (no per-message AI — saved for batch)
@@ -231,40 +262,29 @@ export const initializeSocket = (io) => {
                     },
                     side,
                     nextTurn:   debate.currentSide,
+                    nextTurnUser: debate.currentTurn,
                     turnEndsAt: debate.turnEndsAt,
                     messageCount: { pro: proTotal, con: conTotal },
-                    total: MESSAGES_PER_SIDE,
+                    total: getMessagesPerSide(debate.type),
                 };
                 io.to(`debate:${debateId}`).emit('argument_submitted', msgPayload);
 
-                console.log(`📝 [${side.toUpperCase()}] ${proTotal}/${MESSAGES_PER_SIDE} | CON ${conTotal}/${MESSAGES_PER_SIDE}`);
+                const msgsNeeded = getMessagesPerSide(debate.type);
+                console.log(`📝 [${side.toUpperCase()}] ${proTotal}/${msgsNeeded} | CON ${conTotal}/${msgsNeeded}`);
 
                 // ── Check if debate should end ────────────────────────────────
-                if (proTotal >= MESSAGES_PER_SIDE && conTotal >= MESSAGES_PER_SIDE) {
+                if (proTotal >= msgsNeeded && conTotal >= msgsNeeded) {
                     console.log('🏁 Both sides done. Running batch AI analysis...');
                     // Reload full debate so we have all messages
                     const freshDebate = await Debate.findById(debateId);
                     await finishDebate(io, freshDebate);
-                } else {
-                    // Advance round if both sides spoke in current round
-                    const roundProCount = currentRound.messages.filter(m =>
-                        debate.proTeam.some(p => p.user.toString() === m.sender.toString())
-                    ).length;
-                    const roundConCount = currentRound.messages.filter(m =>
-                        debate.conTeam.some(p => p.user.toString() === m.sender.toString())
-                    ).length;
-
-                    const perTeamSize = Math.max(debate.proTeam.length, 1);
-                    if (roundProCount >= perTeamSize && roundConCount >= perTeamSize
-                        && debate.currentRound < debate.rounds.length - 1) {
-                        debate.currentRound += 1;
-                        await debate.save();
-                        io.to(`debate:${debateId}`).emit('round_changed', {
-                            roundNumber: debate.currentRound + 1,
-                            roundType:   debate.rounds[debate.currentRound]?.type || 'debate',
-                            side:        debate.currentSide,
-                        });
-                    }
+                } else if (roundAdvanced) {
+                    io.to(`debate:${debateId}`).emit('round_changed', {
+                        roundNumber: debate.currentRound + 1,
+                        roundType:   debate.rounds[debate.currentRound]?.type || 'debate',
+                        side:        debate.currentSide,
+                        nextTurnUser: debate.currentTurn,
+                    });
                 }
             } catch (error) {
                 console.error('submit_argument error:', error);
@@ -486,19 +506,34 @@ async function createDebate(players, type) {
         user: p.userId, isAnonymous: p.isAnonymous, alias: p.alias || null, role: 'lead',
     }));
 
+    // 1v1 = 5 rounds, team debates = 6 rounds
+    const is1v1 = type === '1v1';
+    const rounds = is1v1
+        ? [
+            { roundNumber: 1, type: 'opening',  duration: 120, messages: [] },
+            { roundNumber: 2, type: 'rebuttal', duration: 90,  messages: [] },
+            { roundNumber: 3, type: 'counter',  duration: 60,  messages: [] },
+            { roundNumber: 4, type: 'rebuttal', duration: 60,  messages: [] },
+            { roundNumber: 5, type: 'closing',  duration: 60,  messages: [] },
+        ]
+        : [
+            { roundNumber: 1, type: 'opening',  duration: 120, messages: [] },
+            { roundNumber: 2, type: 'rebuttal', duration: 90,  messages: [] },
+            { roundNumber: 3, type: 'counter',  duration: 60,  messages: [] },
+            { roundNumber: 4, type: 'rebuttal', duration: 60,  messages: [] },
+            { roundNumber: 5, type: 'counter',  duration: 60,  messages: [] },
+            { roundNumber: 6, type: 'closing',  duration: 60,  messages: [] },
+        ];
+
     const debate = await Debate.create({
         type,
         topic: { title: topicData.title, description: topicData.description, category: topicData.category },
         proTeam,
         conTeam,
-        rounds: [
-            { roundNumber: 1, type: 'opening',  duration: 120, messages: [] },
-            { roundNumber: 2, type: 'rebuttal', duration: 90,  messages: [] },
-            { roundNumber: 3, type: 'counter',  duration: 60,  messages: [] },
-            { roundNumber: 4, type: 'closing',  duration: 60,  messages: [] },
-        ],
+        rounds,
         currentRound: 0,
         currentSide:  'pro',
+        currentTurn:  proTeam.length > 0 ? proTeam[0].user : null,
         status:       'active',
         startedAt:    new Date(),
         turnEndsAt:   new Date(Date.now() + 120000),

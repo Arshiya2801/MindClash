@@ -118,14 +118,19 @@ const Debate = () => {
             setMessageCount({ pro: proCount, con: conCount });
 
             if (role !== 'spectator') {
-                setIsMyTurn(debate.currentSide === role);
+                if (debate.currentTurn) {
+                    const currentTurnId = debate.currentTurn._id || debate.currentTurn;
+                    setIsMyTurn(currentTurnId.toString() === user._id.toString());
+                } else {
+                    setIsMyTurn(debate.currentSide === role);
+                }
             }
 
             setLoading(false);
         };
 
         const onArgumentSubmitted = (data) => {
-            const { message, side, nextTurn, turnEndsAt, messageCount: count } = data;
+            const { message, side, nextTurn, nextTurnUser, turnEndsAt, messageCount: count } = data;
             setMessages(prev => [...prev, { ...message, side }]);
             if (count) setMessageCount(count);
             setCurrentSide(nextTurn);
@@ -133,7 +138,14 @@ const Debate = () => {
                 const remaining = Math.max(0, Math.floor((new Date(turnEndsAt) - Date.now()) / 1000));
                 setTimeLeft(remaining);
             }
-            setIsMyTurn(nextTurn === myRoleRef.current);
+            if (myRoleRef.current && myRoleRef.current !== 'spectator') {
+                if (nextTurnUser) {
+                    const nextTurnUserId = nextTurnUser._id || nextTurnUser;
+                    setIsMyTurn(nextTurnUserId.toString() === user._id.toString());
+                } else {
+                    setIsMyTurn(nextTurn === myRoleRef.current);
+                }
+            }
             setIsSubmitting(false);
         };
 
@@ -141,7 +153,12 @@ const Debate = () => {
             setCurrentSide(data.side);
             setTimeLeft(data.duration || 120);
             if (myRoleRef.current && myRoleRef.current !== 'spectator') {
-                setIsMyTurn(data.side === myRoleRef.current);
+                if (data.nextTurnUser) {
+                    const nextTurnUserId = data.nextTurnUser._id || data.nextTurnUser;
+                    setIsMyTurn(nextTurnUserId.toString() === user._id.toString());
+                } else {
+                    setIsMyTurn(data.side === myRoleRef.current);
+                }
             }
         };
 
@@ -149,6 +166,14 @@ const Debate = () => {
             setCurrentRound(data.roundNumber - 1);
             setCurrentSide(data.side);
             setTimeLeft(data.duration || 120);
+            if (myRoleRef.current && myRoleRef.current !== 'spectator') {
+                if (data.nextTurnUser) {
+                    const nextTurnUserId = data.nextTurnUser._id || data.nextTurnUser;
+                    setIsMyTurn(nextTurnUserId.toString() === user._id.toString());
+                } else {
+                    setIsMyTurn(data.side === myRoleRef.current);
+                }
+            }
         };
 
         const onSpectatorMessage  = (data) => setSpectatorChat(prev => [...prev, data]);
