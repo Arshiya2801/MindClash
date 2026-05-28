@@ -103,15 +103,15 @@ const Register = () => {
                     <div style={{
                         width: '48px',
                         height: '48px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        background: 'var(--primary-500)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: '0 0 15px rgba(255, 70, 85, 0.4)'
                     }}>
-                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>MC</span>
+                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--gray-900)', fontFamily: "'Oswald', sans-serif" }}>MC</span>
                     </div>
-                    <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#171717', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>MindClash</span>
+                    <span style={{ fontSize: '26px', fontWeight: '700', color: 'var(--gray-50)', fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase', letterSpacing: '2px' }}>MindClash</span>
                 </Link>
 
                 {/* Card */}

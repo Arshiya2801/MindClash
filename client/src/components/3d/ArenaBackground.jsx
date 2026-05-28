@@ -100,10 +100,6 @@ export default function ArenaBackground() {
                 
                 <MovingLights />
                 
-                <Float speed={1.5} rotationIntensity={0.5} floatIntensity={1}>
-                    <ParticleField />
-                </Float>
-                
                 <GlowingGrid theme={theme} />
             </Canvas>
         </div>
