@@ -94,6 +94,11 @@
   --shadow-md: 6px 6px 0px rgba(255, 70, 85, 0.1);
   --shadow-lg: 8px 8px 0px rgba(255, 70, 85, 0.15);
   --shadow-xl: 12px 12px 0px rgba(0, 0, 0, 0.1);
+
+  /* Adjust Accents for Light Mode Visibility */
+  --accent-blue: #0284c7;
+  --accent-emerald: #059669;
+  --accent-amber: #b45309;
 }
 
 * {

@@ -161,7 +161,7 @@ const Communities = () => {
                             style={{
                                 width: '100%', padding: '14px 16px 14px 48px', 
                                 border: '1px solid var(--accent-purple)', 
-                                background: 'rgba(0,0,0,0.4)', 
+                                background: 'var(--bg-tertiary)', 
                                 fontSize: '14px', 
                                 color: 'var(--accent-purple)', 
                                 outline: 'none',
@@ -198,16 +198,16 @@ const Communities = () => {
                                     padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', 
                                     borderTop: `4px solid ${factionColor}`, position: 'relative', overflow: 'hidden'
                                 }}
-                                whileHover={{ scale: 1.03, y: -5, borderColor: factionColor, boxShadow: `0 15px 40px ${factionColor}30` }}
+                                whileHover={{ scale: 1.03, y: -5, borderColor: factionColor, boxShadow: `0 15px 40px color-mix(in srgb, ${factionColor} 30%, transparent)` }}
                             >
                                 {/* Faction Hologram Glow */}
-                                <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: `radial-gradient(circle at top right, ${factionColor}20, transparent 70%)`, pointerEvents: 'none' }} />
+                                <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: `radial-gradient(circle at top right, color-mix(in srgb, ${factionColor} 20%, transparent), transparent 70%)`, pointerEvents: 'none' }} />
                                 
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
                                     <div style={{
-                                        width: '64px', height: '64px', background: `${factionColor}15`, color: factionColor, 
+                                        width: '64px', height: '64px', background: `color-mix(in srgb, ${factionColor} 15%, transparent)`, color: factionColor, 
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold',
-                                        border: `1px solid ${factionColor}50`, clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                                        border: `1px solid color-mix(in srgb, ${factionColor} 50%, transparent)`, clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
                                         fontFamily: "'Oswald', sans-serif"
                                     }}>
                                         {comm.avatar || comm.name.charAt(0)}
@@ -234,7 +234,7 @@ const Communities = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
                                     <span style={{ 
                                         padding: '4px 12px', fontSize: '11px', fontWeight: '700', 
-                                        background: `${factionColor}10`, color: factionColor,
+                                        background: `color-mix(in srgb, ${factionColor} 10%, transparent)`, color: factionColor,
                                         textTransform: 'uppercase', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' 
                                     }}>
                                         {comm.category}
@@ -292,7 +292,7 @@ const Communities = () => {
                                     minLength={3}
                                     value={newCommunity.name}
                                     onChange={e => setNewCommunity({...newCommunity, name: e.target.value})}
-                                    style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(139,92,246,0.2)', color: 'var(--text-primary)', outline: 'none', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}
+                                    style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-tertiary)', border: '1px solid rgba(139,92,246,0.2)', color: 'var(--text-primary)', outline: 'none', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}
                                     placeholder="E.G., CYBERNETICS SYNDICATE"
                                     onFocus={(e) => e.target.style.border = '1px solid var(--accent-purple)'}
                                     onBlur={(e) => e.target.style.border = '1px solid rgba(139,92,246,0.2)'}
@@ -304,7 +304,7 @@ const Communities = () => {
                                     required
                                     value={newCommunity.description}
                                     onChange={e => setNewCommunity({...newCommunity, description: e.target.value})}
-                                    style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(139,92,246,0.2)', color: 'var(--text-primary)', outline: 'none', minHeight: '100px', resize: 'vertical', fontFamily: "monospace" }}
+                                    style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-tertiary)', border: '1px solid rgba(139,92,246,0.2)', color: 'var(--text-primary)', outline: 'none', minHeight: '100px', resize: 'vertical', fontFamily: "monospace" }}
                                     placeholder="DEFINE YOUR FACTION'S PURPOSE..."
                                     onFocus={(e) => e.target.style.border = '1px solid var(--accent-purple)'}
                                     onBlur={(e) => e.target.style.border = '1px solid rgba(139,92,246,0.2)'}

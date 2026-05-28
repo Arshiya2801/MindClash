@@ -123,11 +123,7 @@ const Layout = () => {
                     {/* Right Side: Tools & Profile */}
                     <div style={{ flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px' }}>
                         
-                        {/* XP Display */}
-                        <div className="xp-display pulse-element" style={{ borderRadius: '4px', background: 'rgba(255,70,85,0.05)', padding: '6px 12px' }}>
-                            <Zap style={{ width: '14px', height: '14px' }} />
-                            <span>{user?.xp?.toLocaleString() || 0}</span>
-                        </div>
+
 
                         {/* User Menu */}
                         <Link

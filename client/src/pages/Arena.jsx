@@ -219,7 +219,7 @@ const Arena = () => {
                                     opacity: inQueue ? 0.5 : 1,
                                     border: matchType === match.type ? `2px solid ${match.color}` : '1px solid var(--gray-600)',
                                     background: matchType === match.type ? match.bgImage : 'var(--bg-secondary)',
-                                    boxShadow: matchType === match.type ? `0 0 30px ${match.color}30` : 'none',
+                                    boxShadow: matchType === match.type ? `0 0 30px color-mix(in srgb, ${match.color} 30%, transparent)` : 'none',
                                     position: 'relative',
                                     overflow: 'hidden',
                                     display: 'flex',
@@ -237,7 +237,7 @@ const Arena = () => {
                                 <div style={{
                                     width: '80px',
                                     height: '80px',
-                                    background: matchType === match.type ? `${match.color}20` : 'var(--gray-800)',
+                                    background: matchType === match.type ? `color-mix(in srgb, ${match.color} 20%, transparent)` : 'var(--bg-tertiary)',
                                     color: matchType === match.type ? match.color : 'var(--text-muted)',
                                     display: 'flex',
                                     alignItems: 'center',

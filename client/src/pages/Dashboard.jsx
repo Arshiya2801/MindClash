@@ -213,8 +213,8 @@ const Dashboard = () => {
                                 <div style={{
                                     width: '56px',
                                     height: '56px',
-                                    background: `linear-gradient(135deg, transparent, ${action.color}20)`,
-                                    border: `1px solid ${action.color}40`,
+                                    background: `linear-gradient(135deg, transparent, color-mix(in srgb, ${action.color} 20%, transparent))`,
+                                    border: `1px solid color-mix(in srgb, ${action.color} 40%, transparent)`,
                                     color: action.color,
                                     display: 'flex',
                                     alignItems: 'center',

@@ -155,7 +155,7 @@ const Topics = () => {
                             style={{
                                 width: '100%', padding: '14px 16px 14px 48px', 
                                 border: '1px solid var(--accent-blue)', 
-                                background: 'rgba(0,0,0,0.4)', 
+                                background: 'var(--bg-tertiary)', 
                                 fontSize: '14px', 
                                 color: 'var(--accent-blue)', 
                                 outline: 'none',
@@ -215,7 +215,7 @@ const Topics = () => {
                                 transition={{ delay: i * 0.05 }}
                                 className="arena-card"
                                 style={{ padding: '32px', display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', overflow: 'hidden' }}
-                                whileHover={{ scale: 1.02, y: -4, borderColor: catColor, boxShadow: `0 10px 30px ${catColor}20` }}
+                                whileHover={{ scale: 1.02, y: -4, borderColor: catColor, boxShadow: `0 10px 30px color-mix(in srgb, ${catColor} 20%, transparent)` }}
                             >
                                 {/* Heat Bar Background */}
                                 <div style={{ position: 'absolute', bottom: 0, left: 0, height: '2px', background: catColor, width: `${heatPercent}%`, boxShadow: `0 0 10px ${catColor}` }} />
@@ -223,7 +223,7 @@ const Topics = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                                     <span style={{
                                         padding: '4px 12px', fontSize: '11px', fontWeight: '700', 
-                                        background: `${catColor}15`, color: catColor, border: `1px solid ${catColor}40`,
+                                        background: `color-mix(in srgb, ${catColor} 15%, transparent)`, color: catColor, border: `1px solid color-mix(in srgb, ${catColor} 40%, transparent)`,
                                         textTransform: 'uppercase', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px'
                                     }}>
                                         {topic.category}
@@ -304,7 +304,7 @@ const Topics = () => {
                                     minLength={10}
                                     value={newTopic.title}
                                     onChange={e => setNewTopic({...newTopic, title: e.target.value})}
-                                    style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,240,255,0.2)', color: 'var(--text-primary)', outline: 'none', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}
+                                    style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-tertiary)', border: '1px solid rgba(0,240,255,0.2)', color: 'var(--text-primary)', outline: 'none', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}
                                     placeholder="E.G., ARTIFICIAL INTELLIGENCE WILL REPLACE DEVELOPERS"
                                     onFocus={(e) => e.target.style.border = '1px solid var(--accent-blue)'}
                                     onBlur={(e) => e.target.style.border = '1px solid rgba(0,240,255,0.2)'}
@@ -316,7 +316,7 @@ const Topics = () => {
                                     required
                                     value={newTopic.description}
                                     onChange={e => setNewTopic({...newTopic, description: e.target.value})}
-                                    style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,240,255,0.2)', color: 'var(--text-primary)', outline: 'none', minHeight: '120px', resize: 'vertical', fontFamily: "monospace" }}
+                                    style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-tertiary)', border: '1px solid rgba(0,240,255,0.2)', color: 'var(--text-primary)', outline: 'none', minHeight: '120px', resize: 'vertical', fontFamily: "monospace" }}
                                     placeholder="Provide necessary background data for this protocol..."
                                     onFocus={(e) => e.target.style.border = '1px solid var(--accent-blue)'}
                                     onBlur={(e) => e.target.style.border = '1px solid rgba(0,240,255,0.2)'}

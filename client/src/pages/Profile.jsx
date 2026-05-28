@@ -292,7 +292,7 @@ const Profile = () => {
                             width: '40px',
                             height: '40px',
                             borderRadius: '12px',
-                            background: `${stat.color}15`,
+                            background: `color-mix(in srgb, ${stat.color} 15%, transparent)`,
                             color: stat.color,
                             display: 'flex',
                             alignItems: 'center',
