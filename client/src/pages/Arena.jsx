@@ -6,7 +6,7 @@ import { joinQueue, leaveQueue, getSocket } from '../services/socket';
 import { debateAPI } from '../services/api';
 import {
     Swords, Users, Crown, Eye, Shield, Timer,
-    Play, Square, Sparkles, Zap, Target, Flame
+    Play, Square, Sparkles, Zap, Target, Flame, Radar
 } from 'lucide-react';
 
 const Arena = () => {
@@ -23,24 +23,27 @@ const Arena = () => {
     const matchTypes = [
         {
             type: '1v1',
-            title: '1v1 Duel',
-            desc: 'Classic head-to-head debate',
-            icon: <Swords size={28} />,
-            color: '#6366f1'
+            title: '1v1 DUEL',
+            desc: 'CLASSIC HEAD-TO-HEAD',
+            icon: <Swords size={32} />,
+            color: 'var(--primary-500)',
+            bgImage: 'radial-gradient(circle at top right, rgba(255,70,85,0.2), transparent 70%)'
         },
         {
             type: '2v2',
-            title: '2v2 Team',
-            desc: 'Team up with a partner',
-            icon: <Users size={28} />,
-            color: '#8b5cf6'
+            title: '2v2 SQUAD',
+            desc: 'TACTICAL TEAM BATTLE',
+            icon: <Users size={32} />,
+            color: 'var(--accent-blue)',
+            bgImage: 'radial-gradient(circle at top right, rgba(0,240,255,0.2), transparent 70%)'
         },
         {
             type: 'battleRoyale',
-            title: 'Battle Royale',
-            desc: 'Last debater standing!',
-            icon: <Crown size={28} />,
-            color: '#f59e0b'
+            title: 'ROYALE',
+            desc: 'LAST MIND STANDING',
+            icon: <Crown size={32} />,
+            color: 'var(--accent-amber)',
+            bgImage: 'radial-gradient(circle at top right, rgba(255,184,0,0.2), transparent 70%)'
         },
     ];
 
@@ -119,61 +122,80 @@ const Arena = () => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header */}
-            <div className="glass-card" style={{ padding: '24px', textAlign: 'center' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                    <Swords size={28} style={{ color: '#6366f1' }} />
-                    <span className="text-gradient">Debate Arena</span>
-                </h1>
-                <p style={{ color: '#737373', fontSize: '14px' }}>
-                    Choose your battle mode and show your skills!
-                </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            
+            {/* Cinematic Header */}
+            <div className="arena-card" style={{ padding: '60px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden', borderBottom: '4px solid var(--primary-500)' }}>
+                {/* Background Decor */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '30px 30px', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '200vw', height: '100px', background: 'radial-gradient(ellipse at center, rgba(255,70,85,0.1) 0%, transparent 50%)', filter: 'blur(20px)', pointerEvents: 'none' }} />
+                
+                {/* Rotating SVG Ring */}
+                <svg width="200" height="200" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.05, pointerEvents: 'none' }}>
+                    <circle cx="100" cy="100" r="90" fill="none" stroke="white" strokeWidth="1" strokeDasharray="10 15" className="spin-slow" style={{ transformOrigin: 'center', animation: 'spin 20s linear infinite' }} />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="var(--primary-500)" strokeWidth="2" strokeDasharray="40 60" className="spin-slow-reverse" style={{ transformOrigin: 'center', animation: 'spin 15s linear infinite reverse' }} />
+                </svg>
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div className="badge pulse-element" style={{ marginBottom: '16px', background: 'rgba(255, 70, 85, 0.1)', color: 'var(--primary-500)', borderColor: 'var(--primary-500)' }}>
+                        <Zap size={14} /> SYSTEM ENGAGED
+                    </div>
+                    <h1 style={{ fontSize: 'clamp(3rem, 5vw, 5rem)', fontWeight: '700', fontFamily: "'Oswald', sans-serif", color: 'var(--text-primary)', margin: 0, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '4px' }}>
+                        THE <span className="hero-gradient-text">ARENA</span>
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '16px', marginTop: '16px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                        SELECT PROTOCOL. ENGAGE MINDS. DESTROY LOGIC.
+                    </p>
+                </div>
             </div>
 
-            {/* Tab Switcher */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            {/* Tactical Tab Switcher */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
                 <button
                     onClick={() => setTab('play')}
                     style={{
-                        padding: '12px 28px',
-                        borderRadius: '50px',
-                        fontWeight: '600',
-                        fontSize: '15px',
+                        padding: '16px 40px',
+                        fontWeight: '700',
+                        fontSize: '16px',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        border: tab === 'play' ? 'none' : '1px solid #e5e5e5',
-                        background: tab === 'play' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#fff',
-                        color: tab === 'play' ? '#fff' : '#525252',
-                        boxShadow: tab === 'play' ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
-                        transition: 'all 0.2s ease'
+                        gap: '12px',
+                        border: tab === 'play' ? '1px solid var(--primary-500)' : '1px solid var(--gray-600)',
+                        background: tab === 'play' ? 'rgba(255,70,85,0.1)' : 'var(--bg-secondary)',
+                        color: tab === 'play' ? 'var(--primary-500)' : 'var(--text-muted)',
+                        boxShadow: tab === 'play' ? '0 0 20px rgba(255,70,85,0.2)' : 'none',
+                        transition: 'all 0.2s ease',
+                        fontFamily: "'Oswald', sans-serif",
+                        letterSpacing: '2px',
+                        clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)'
                     }}
                 >
-                    <Swords size={18} />
-                    Play
+                    <Swords size={20} />
+                    PLAY
                 </button>
                 <button
                     onClick={() => setTab('spectate')}
                     style={{
-                        padding: '12px 28px',
-                        borderRadius: '50px',
-                        fontWeight: '600',
-                        fontSize: '15px',
+                        padding: '16px 40px',
+                        fontWeight: '700',
+                        fontSize: '16px',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        border: tab === 'spectate' ? 'none' : '1px solid #e5e5e5',
-                        background: tab === 'spectate' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#fff',
-                        color: tab === 'spectate' ? '#fff' : '#525252',
-                        boxShadow: tab === 'spectate' ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
-                        transition: 'all 0.2s ease'
+                        gap: '12px',
+                        border: tab === 'spectate' ? '1px solid var(--accent-blue)' : '1px solid var(--gray-600)',
+                        background: tab === 'spectate' ? 'rgba(0,240,255,0.1)' : 'var(--bg-secondary)',
+                        color: tab === 'spectate' ? 'var(--accent-blue)' : 'var(--text-muted)',
+                        boxShadow: tab === 'spectate' ? '0 0 20px rgba(0,240,255,0.2)' : 'none',
+                        transition: 'all 0.2s ease',
+                        fontFamily: "'Oswald', sans-serif",
+                        letterSpacing: '2px',
+                        clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)'
                     }}
                 >
-                    <Eye size={18} />
-                    Spectate
+                    <Eye size={20} />
+                    SPECTATE
                 </button>
             </div>
 
@@ -181,91 +203,99 @@ const Arena = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}
                 >
-                    {/* Match Types */}
+                    {/* Cinematic Match Types */}
                     <div className="grid-3">
                         {matchTypes.map((match) => (
                             <motion.div
                                 key={match.type}
                                 onClick={() => !inQueue && setMatchType(match.type)}
+                                className="arena-card"
                                 style={{
-                                    background: '#fff',
-                                    border: matchType === match.type ? `2px solid ${match.color}` : '1px solid #e5e5e5',
-                                    borderRadius: '18px',
-                                    padding: '28px',
+                                    padding: '40px 24px',
                                     textAlign: 'center',
                                     cursor: inQueue ? 'not-allowed' : 'pointer',
                                     opacity: inQueue ? 0.5 : 1,
-                                    boxShadow: matchType === match.type ? `0 4px 20px ${match.color}20` : 'var(--shadow-sm)',
-                                    transition: 'all 0.2s ease'
+                                    border: matchType === match.type ? `2px solid ${match.color}` : '1px solid var(--gray-600)',
+                                    background: matchType === match.type ? match.bgImage : 'var(--bg-secondary)',
+                                    boxShadow: matchType === match.type ? `0 0 30px ${match.color}30` : 'none',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center'
                                 }}
-                                whileHover={!inQueue ? { scale: 1.02 } : {}}
+                                whileHover={!inQueue ? { scale: 1.02, y: -5 } : {}}
                                 whileTap={!inQueue ? { scale: 0.98 } : {}}
                             >
+                                {/* Selection Indicator */}
+                                {matchType === match.type && (
+                                    <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: '4px', background: match.color, boxShadow: `0 0 15px ${match.color}` }} />
+                                )}
+                                
                                 <div style={{
-                                    width: '56px',
-                                    height: '56px',
-                                    borderRadius: '14px',
-                                    background: `${match.color}15`,
-                                    color: match.color,
+                                    width: '80px',
+                                    height: '80px',
+                                    background: matchType === match.type ? `${match.color}20` : 'var(--gray-800)',
+                                    color: matchType === match.type ? match.color : 'var(--text-muted)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    margin: '0 auto 16px'
+                                    margin: '0 auto 24px',
+                                    border: `1px solid ${matchType === match.type ? match.color : 'var(--gray-600)'}`,
+                                    transform: 'rotate(45deg)',
+                                    transition: 'all 0.3s'
                                 }}>
-                                    {match.icon}
+                                    <div style={{ transform: 'rotate(-45deg)' }}>
+                                        {match.icon}
+                                    </div>
                                 </div>
-                                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#171717', marginBottom: '6px' }}>
+                                <h3 style={{ fontSize: '24px', fontWeight: '700', color: matchType === match.type ? 'var(--text-primary)' : 'var(--text-secondary)', marginBottom: '8px', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px' }}>
                                     {match.title}
                                 </h3>
-                                <p style={{ fontSize: '13px', color: '#737373' }}>{match.desc}</p>
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>{match.desc}</p>
                             </motion.div>
                         ))}
                     </div>
 
-                    {/* Options */}
-                    <div className="glass-card" style={{ padding: '24px' }}>
-                        <h3 style={{
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            marginBottom: '16px',
-                            color: '#171717',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <Shield size={18} style={{ color: '#8b5cf6' }} />
-                            Match Options
+                    {/* Tactical Options Module */}
+                    <div className="arena-card" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '12px', height: '2px', background: 'var(--accent-amber)' }} />
+                            IDENTITY PROTOCOLS
                         </h3>
 
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            padding: '16px',
-                            background: '#fafafa',
-                            borderRadius: '14px',
-                            border: '1px solid #e5e5e5'
+                            padding: '24px',
+                            background: anonymous ? 'rgba(139, 92, 246, 0.1)' : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${anonymous ? 'var(--accent-purple)' : 'rgba(255,255,255,0.05)'}`,
+                            transition: 'all 0.3s'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                <div style={{
-                                    width: '44px',
-                                    height: '44px',
-                                    borderRadius: '12px',
-                                    background: '#f5f3ff',
-                                    color: '#8b5cf6',
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                <div className={anonymous ? 'pulse-element' : ''} style={{
+                                    width: '50px',
+                                    height: '50px',
+                                    background: anonymous ? 'var(--accent-purple)' : 'var(--gray-800)',
+                                    color: anonymous ? 'white' : 'var(--text-muted)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center'
+                                    justifyContent: 'center',
+                                    clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                                    transition: 'all 0.3s'
                                 }}>
-                                    <Shield size={20} />
+                                    <Shield size={24} />
                                 </div>
                                 <div>
-                                    <p style={{ fontWeight: '600', color: '#171717', fontSize: '14px' }}>Anonymous Mode</p>
-                                    <p style={{ fontSize: '12px', color: '#737373' }}>
-                                        Debate as: <span style={{ fontWeight: '500', color: '#8b5cf6' }}>
-                                            {user?.anonymousAlias || 'WiseThinker_' + Math.floor(Math.random() * 1000)}
+                                    <p style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '16px', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px', marginBottom: '4px' }}>
+                                        {anonymous ? 'STEALTH MODE ENGAGED' : 'PUBLIC IDENTITY'}
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>
+                                        CALLSIGN: <span style={{ fontWeight: '700', color: anonymous ? 'var(--accent-purple)' : 'var(--accent-blue)' }}>
+                                            {anonymous ? (user?.anonymousAlias || 'GHOST_' + Math.floor(Math.random() * 1000)) : user?.username}
                                         </span>
                                     </p>
                                 </div>
@@ -274,13 +304,13 @@ const Arena = () => {
                                 onClick={() => !inQueue && setAnonymous(!anonymous)}
                                 disabled={inQueue}
                                 className={`toggle ${anonymous ? 'active' : ''}`}
-                                style={{ opacity: inQueue ? 0.5 : 1 }}
+                                style={{ opacity: inQueue ? 0.5 : 1, transform: 'scale(1.2)' }}
                             />
                         </div>
                     </div>
 
-                    {/* Queue / Find Match */}
-                    <div style={{ textAlign: 'center' }}>
+                    {/* Massive Cinematic Matchmaking CTA */}
+                    <div style={{ textAlign: 'center', marginTop: '16px' }}>
                         <AnimatePresence mode="wait">
                             {inQueue ? (
                                 <motion.div
@@ -288,22 +318,24 @@ const Arena = () => {
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    style={{ display: 'inline-block' }}
+                                    style={{ display: 'inline-block', width: '100%', maxWidth: '600px' }}
                                 >
-                                    <div className="glass-card" style={{ padding: '32px' }}>
-                                        <div className="spinner" style={{ margin: '0 auto 16px' }}></div>
-                                        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>
-                                            Finding Match...
+                                    <div className="arena-card pulse-element" style={{ padding: '40px', background: 'rgba(255,70,85,0.05)', border: '1px solid var(--primary-500)', position: 'relative', overflow: 'hidden' }}>
+                                        {/* Scanner sweep line */}
+                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'var(--primary-500)', boxShadow: '0 0 20px var(--primary-500)', animation: 'scan 2s linear infinite' }} />
+                                        
+                                        <div style={{ color: 'var(--primary-500)', marginBottom: '16px', filter: 'drop-shadow(0 0 10px var(--primary-500))' }}>
+                                            <Radar size={48} style={{ animation: 'spin 4s linear infinite' }} />
+                                        </div>
+                                        <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: 'var(--primary-500)', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px' }}>
+                                            ESTABLISHING CONNECTION...
                                         </h3>
-                                        <p className="text-gradient" style={{ fontSize: '32px', fontWeight: '700', marginBottom: '16px' }}>
+                                        <p style={{ fontSize: '48px', fontWeight: '700', marginBottom: '24px', color: 'var(--text-primary)', fontFamily: "'Oswald', sans-serif", lineHeight: 1 }}>
                                             {formatTime(queueTime)}
                                         </p>
-                                        <p style={{ color: '#737373', marginBottom: '20px', fontSize: '14px' }}>
-                                            Searching for worthy opponents 🔍
-                                        </p>
-                                        <button onClick={handleCancelQueue} className="btn-secondary">
+                                        <button onClick={handleCancelQueue} className="btn-primary" style={{ background: 'transparent', border: '1px solid var(--gray-500)', color: 'var(--text-muted)' }}>
                                             <Square size={16} />
-                                            Cancel
+                                            ABORT SEARCH
                                         </button>
                                     </div>
                                 </motion.div>
@@ -314,14 +346,21 @@ const Arena = () => {
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     onClick={handleFindMatch}
-                                    className="btn-primary"
-                                    style={{ fontSize: '18px', padding: '18px 48px' }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    className="btn-primary float-element"
+                                    style={{ 
+                                        fontSize: '24px', 
+                                        padding: '24px 64px', 
+                                        clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                                        boxShadow: '0 0 40px rgba(255,70,85,0.4)',
+                                        display: 'inline-flex',
+                                        gap: '16px'
+                                    }}
+                                    whileHover={{ scale: 1.05, boxShadow: '0 0 60px rgba(255,70,85,0.6)' }}
+                                    whileTap={{ scale: 0.95 }}
                                 >
-                                    <Swords size={22} />
-                                    Find Match
-                                    <Flame size={22} />
+                                    <Target size={28} />
+                                    INITIATE BATTLE
+                                    <Target size={28} />
                                 </motion.button>
                             )}
                         </AnimatePresence>
@@ -331,75 +370,63 @@ const Arena = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <h2 style={{
-                            fontSize: '18px',
-                            fontWeight: '600',
-                            color: '#171717',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <span style={{
-                                width: '8px',
-                                height: '8px',
-                                background: '#ef4444',
-                                borderRadius: '50%'
-                            }}></span>
-                            Live Debates
+                        <h2 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', fontFamily: "'Oswald', sans-serif", letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '8px', height: '8px', background: 'var(--primary-500)', borderRadius: '50%', animation: 'pulse-live 2s infinite' }} />
+                            ACTIVE SESSIONS
                         </h2>
-                        <button onClick={fetchLiveDebates} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 16px' }}>
-                            Refresh
+                        <button onClick={fetchLiveDebates} className="btn-primary" style={{ fontSize: '13px', padding: '8px 16px', background: 'transparent', border: '1px solid var(--gray-600)' }}>
+                            SCAN NETWORK
                         </button>
                     </div>
 
                     {loading ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
-                            <div className="spinner"></div>
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '64px' }}>
+                            <div style={{ color: 'var(--primary-500)' }}><Radar size={48} style={{ animation: 'spin 2s linear infinite' }} /></div>
                         </div>
                     ) : liveDebates.length > 0 ? (
                         <div className="grid-2">
                             {liveDebates.map((debate, i) => (
                                 <motion.div
                                     key={debate._id || i}
-                                    className="glass-card"
-                                    style={{ cursor: 'pointer' }}
-                                    whileHover={{ scale: 1.01 }}
+                                    className="arena-card"
+                                    style={{ cursor: 'pointer', padding: '24px' }}
+                                    whileHover={{ scale: 1.02, borderColor: 'var(--primary-500)' }}
                                     onClick={() => navigate(`/debate/${debate._id}`)}
                                 >
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                        <span className="live-indicator">LIVE</span>
-                                        <span style={{ fontSize: '13px', color: '#737373' }}>
-                                            <Eye size={14} style={{ display: 'inline', marginRight: '4px' }} />
-                                            {debate.spectatorCount || 0} watching
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,70,85,0.1)', color: 'var(--primary-500)', padding: '4px 10px', fontSize: '12px', fontWeight: 'bold' }}>
+                                            <Eye size={14} /> LIVE
+                                        </div>
+                                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>
+                                            SPECTATORS: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{debate.spectatorCount || 0}</span>
                                         </span>
                                     </div>
-                                    <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#171717', marginBottom: '12px' }}>
-                                        {debate.topic?.title || 'Debate in Progress'}
+                                    <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px', fontFamily: "'Oswald', sans-serif" }}>
+                                        {debate.topic?.title || 'CLASSIFIED ARGUMENT'}
                                     </h3>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span className="badge badge-primary">{debate.type}</span>
-                                        <button className="btn-primary" style={{ fontSize: '13px', padding: '8px 16px' }}>
-                                            Watch →
+                                        <span style={{ fontSize: '12px', color: 'var(--accent-blue)', letterSpacing: '1px', border: '1px solid var(--accent-blue)', padding: '4px 12px' }}>{debate.type.toUpperCase()}</span>
+                                        <button style={{ background: 'transparent', border: 'none', color: 'var(--primary-500)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                            OBSERVE <Play size={16} />
                                         </button>
                                     </div>
                                 </motion.div>
                             ))}
                         </div>
                     ) : (
-                        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🎬</div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#171717', marginBottom: '8px' }}>
-                                No Live Debates
+                        <div className="arena-card" style={{ padding: '64px', textAlign: 'center', border: '1px dashed var(--gray-600)' }}>
+                            <div style={{ color: 'var(--gray-600)', marginBottom: '24px' }}><Square size={48} /></div>
+                            <h3 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', fontFamily: "'Oswald', sans-serif", letterSpacing: '1px' }}>
+                                NETWORK SILENT
                             </h3>
-                            <p style={{ color: '#737373', marginBottom: '20px', fontSize: '14px' }}>
-                                Start a debate to be the first one live!
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px', letterSpacing: '1px' }}>
+                                NO ACTIVE SESSIONS DETECTED IN THE SECTOR.
                             </p>
-                            <button onClick={() => setTab('play')} className="btn-primary">
-                                <Play size={16} />
-                                Start Debating
+                            <button onClick={() => setTab('play')} className="btn-primary" style={{ padding: '12px 32px' }}>
+                                BE THE FIRST
                             </button>
                         </div>
                     )}
