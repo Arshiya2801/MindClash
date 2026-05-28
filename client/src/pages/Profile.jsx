@@ -7,6 +7,7 @@ import {
     Trophy, Award, Users, Swords, Target, TrendingUp,
     Calendar, Star, Zap, Crown, Heart, UserPlus, UserMinus
 } from 'lucide-react';
+import XPProgressBar from '../components/XPProgressBar';
 
 const Profile = () => {
     const { username } = useParams();
@@ -219,6 +220,9 @@ const Profile = () => {
                         {profile.bio && (
                             <p style={{ color: '#737373', fontSize: '14px', marginBottom: '16px' }}>{profile.bio}</p>
                         )}
+                        <div style={{ maxWidth: '400px', marginTop: '16px' }}>
+                            <XPProgressBar xp={profile.xp || 0} level={profile.level || 1} />
+                        </div>
 
                         {/* Social Stats */}
                         <div style={{ display: 'flex', gap: '24px' }}>

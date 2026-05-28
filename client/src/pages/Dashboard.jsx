@@ -7,6 +7,7 @@ import {
     Swords, Eye, Trophy, Flame, Users, Target,
     Zap, Star, Sparkles, TrendingUp, Play, Crown
 } from 'lucide-react';
+import XPProgressBar from '../components/XPProgressBar';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -126,6 +127,10 @@ const Dashboard = () => {
                             <span style={{ color: '#737373', fontSize: '14px' }}>
                                 Level {user?.level || 1}
                             </span>
+                        </div>
+                        
+                        <div style={{ maxWidth: '400px', marginTop: '16px' }}>
+                            <XPProgressBar xp={user?.xp || 0} level={user?.level || 1} />
                         </div>
                     </div>
                     <Link to="/arena">

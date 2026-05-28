@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -6,11 +6,29 @@ import {
     Home, Swords, Trophy, ShoppingBag, User, Menu, X, LogOut,
     Zap
 } from 'lucide-react';
+import LevelUpModal from './LevelUpModal';
 
 const Layout = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    
+    // Level Up Logic
+    const prevLevelRef = useRef(user?.level);
+    const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+    const [achievedLevel, setAchievedLevel] = useState(user?.level || 1);
+
+    useEffect(() => {
+        if (user?.level && prevLevelRef.current) {
+            if (user.level > prevLevelRef.current) {
+                setAchievedLevel(user.level);
+                setShowLevelUpModal(true);
+            }
+        }
+        if (user?.level) {
+            prevLevelRef.current = user.level;
+        }
+    }, [user?.level]);
 
     const navItems = [
         { path: '/dashboard', label: 'Home', icon: Home },
@@ -245,6 +263,13 @@ const Layout = () => {
             }}>
                 <Outlet />
             </main>
+
+            {/* Global Level Up Modal */}
+            <LevelUpModal 
+                isOpen={showLevelUpModal} 
+                onClose={() => setShowLevelUpModal(false)} 
+                level={achievedLevel} 
+            />
         </div>
     );
 };
