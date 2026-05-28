@@ -6,7 +6,7 @@ import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react
 
 const Register = () => {
     const navigate = useNavigate();
-    const { register, error, clearError } = useAuth();
+    const { register, error, clearError, isAuthenticated, loading: authLoading } = useAuth();
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -16,6 +16,11 @@ const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [validationError, setValidationError] = useState('');
+
+    // Redirect to dashboard if already authenticated
+    if (!authLoading && isAuthenticated) {
+        navigate('/dashboard');
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();

@@ -6,10 +6,15 @@ import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 
 const Login = () => {
     const navigate = useNavigate();
-    const { login, error, clearError } = useAuth();
+    const { login, error, clearError, isAuthenticated, loading: authLoading } = useAuth();
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    // Redirect to dashboard if already authenticated
+    if (!authLoading && isAuthenticated) {
+        navigate('/dashboard');
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();

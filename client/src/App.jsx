@@ -29,12 +29,6 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { loading } = useAuth();
-
-  if (loading) {
-    return <Loader />;
-  }
-
   return (
     <ThemeProvider>
       <Routes>
